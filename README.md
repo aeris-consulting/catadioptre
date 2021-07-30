@@ -1,6 +1,9 @@
 # Katadioptre
 
-## Reflection utils for testing in Kotlin
+## Reflection tools for testing in Kotlin
+
+[![Build](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml/badge.svg)](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.aeris-consulting/katadioptre.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.aeris-consulting%22%20AND%20a:%22katadioptre%22)
 
 **Katadioptre** is a lightweight library to manipulate the instances and objects in Kotlin.
 
@@ -18,6 +21,30 @@ In French, a "catadioptre" is a reflector you generally have on bicycles or road
 _Kotlin + Catadioptre = Katadioptre_
 
 ## How to use Katadioptre
+
+### Import the dependency
+
+You can directly get the dependency from Maven Central.
+
+With Gradle - Groovy:
+```
+implementation 'io.aeris-consulting:katadioptre:0.1.0'
+```
+With Gradle - Kotlin:
+```
+implementation("io.aeris-consulting:katadioptre:0.1.0")
+```
+
+With Maven:
+```
+<dependency>
+  <groupId>io.aeris-consulting</groupId>
+  <artifactId>katadioptre</artifactId>
+  <version>0.1.0</version>
+</dependency>
+```
+
+You can find more on [Maven Central](https://search.maven.org/artifact/io.aeris-consulting/katadioptre).
 
 ### Setting a private or protected property
 
