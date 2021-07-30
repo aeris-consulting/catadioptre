@@ -1,5 +1,9 @@
 # Katadioptre
 
+[![Continuous Integration](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml/badge.svg)](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.aeris-consulting/katadioptre?label=Maven%20central&style=plastic&versionPrefix=0.1.0)](https://img.shields.io/maven-central/v/io.aeris-consulting/katadioptre?label=Maven%20central&style=plastic&versionPrefix=0.1.0)
+
+
 ## Reflection utils for testing in Kotlin
 
 **Katadioptre** is a lightweight library to manipulate the instances and objects in Kotlin.

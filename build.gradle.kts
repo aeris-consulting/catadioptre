@@ -13,9 +13,10 @@ plugins {
 
     id("nebula.contacts") version "5.1.0"
     id("nebula.info") version "9.1.1"
-    id("nebula.maven-publish") version "17.0.0"
-    id("nebula.maven-scm") version "17.0.0"
-    id("nebula.maven-manifest") version "17.0.0"
+    id("nebula.maven-publish") version "17.3.3"
+    id("nebula.maven-scm") version "17.3.3"
+    id("nebula.maven-manifest") version "17.3.3"
+    id("nebula.maven-apache-license") version "17.3.3"
     signing
 }
 
