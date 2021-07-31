@@ -4,6 +4,7 @@
 
 [![Build](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml/badge.svg)](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/io.aeris-consulting/katadioptre.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.aeris-consulting%22%20AND%20a:%22katadioptre%22)
+[![Scan with Detekt](https://github.com/aeris-consulting/katadioptre/actions/workflows/detekt-analysis.yml/badge.svg)](https://github.com/aeris-consulting/katadioptre/actions/workflows/detekt-analysis.yml)
 
 **Katadioptre** is a lightweight library to manipulate the instances and objects in Kotlin.
 
@@ -22,17 +23,24 @@ _Kotlin + Catadioptre = Katadioptre_
 
 ## How to use Katadioptre
 
+### Table of contents
+
+* [Import the dependency](#import-the-dependency)
+* [Setting a private or protected property](#setting-a-private-or-protected-property)
+* [Getting a private or protected property](#getting-a-private-or-protected-property)
+* [Executing a private or protected function](#executing-a-private-or-protected-function)
+
 ### Import the dependency
 
 You can directly get the dependency from Maven Central.
 
 With Gradle - Groovy:
 ```
-implementation 'io.aeris-consulting:katadioptre:0.1.0'
+testImplementation 'io.aeris-consulting:katadioptre:0.1.0'
 ```
 With Gradle - Kotlin:
 ```
-implementation("io.aeris-consulting:katadioptre:0.1.0")
+testImplementation("io.aeris-consulting:katadioptre:0.1.0")
 ```
 
 With Maven:
@@ -41,6 +49,7 @@ With Maven:
   <groupId>io.aeris-consulting</groupId>
   <artifactId>katadioptre</artifactId>
   <version>0.1.0</version>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -62,7 +71,7 @@ You can also use the `infix` function `withProperty`
 ```
 
 While you can use `setProperty` or `withProperty` to set a property to null, a more concise option is to use the function
-`clearProperty´:
+`clearProperty`:
 ```
 instance clearProperty "myProperty"
 ```
