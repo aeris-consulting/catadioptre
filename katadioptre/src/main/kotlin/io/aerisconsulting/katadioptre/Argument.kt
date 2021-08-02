@@ -12,9 +12,15 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-rootProject.name = "katadioptre-root"
+package io.aerisconsulting.katadioptre
 
-include("katadioptre")
-include("katadioptre-annotations")
-include("katadioptre-kotlin-dsl-example")
-include("katadioptre-groovy-dsl-example")
+/**
+ * Descriptor for a function argument passed by the caller.
+ *
+ * @author Eric Jessé
+ */
+data class Argument constructor(
+    internal val value: Any?,
+    internal val type: Parameter,
+    internal val isOmitted: Boolean? = null
+)

@@ -1,0 +1,13 @@
+### JetBrains ###
+# Ignores the whole .idea folder and .iml files
+# See https://github.com/joeblau/gitignore.io/issues/186 and https://github.com/joeblau/gitignore.io/issues/360
+.idea/
+*.iml
+
+### Gradle ###
+.gradle
+.*.gradle
+gradle.properties
+build/
+
+.java-version

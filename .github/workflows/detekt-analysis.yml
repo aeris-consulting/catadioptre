@@ -2,7 +2,7 @@
 # Detekt.
 #
 # Scans are triggered:
-# 1. On every push to default and protected branches
+# 1. On every push
 # 2. On every Pull Request targeting the default branch
 # 3. On a weekly schedule
 # 4. Manually, on demand, via the "workflow_dispatch" event
@@ -15,7 +15,6 @@ name: Scan with Detekt
 on:
   # Triggers the workflow on push or pull request events but only for default and protected branches
   push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
   schedule:
