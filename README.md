@@ -2,17 +2,17 @@
 
 ## Reflection tools for testing in Kotlin
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.aeris-consulting/katadioptre.svg?color=blue&label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.aeris-consulting%22%20AND%20a:%22katadioptre%22)
 [![Build](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml/badge.svg)](https://github.com/aeris-consulting/katadioptre/actions/workflows/gradle-master.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/io.aeris-consulting/katadioptre.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.aeris-consulting%22%20AND%20a:%22katadioptre%22)
 [![Scan with Detekt](https://github.com/aeris-consulting/katadioptre/actions/workflows/detekt-analysis.yml/badge.svg)](https://github.com/aeris-consulting/katadioptre/actions/workflows/detekt-analysis.yml)
 
-**Katadioptre** is a lightweight library to manipulate the instances and objects in Kotlin.
+**Katadioptre** is a lightweight library to work with private members in Kotlin using reflection.
 
-Its main goal is to provide access to private members. With **Katadioptre**, you can:
+With **Katadioptre**, you can:
 
-* set or get private, protected properties,
-* execute private and protected functions.
-* generate extension functions to easily access to the private members in your tests.
+* set or get private and protected properties,
+* execute private and protected functions,
+* generate extension functions at compilation to easily access to the private members in your tests.
 
 **Katadioptre** supports variable, optional and named arguments in functions as well as `suspend` functions.
 
@@ -99,7 +99,7 @@ You can find more on [Maven Central](https://search.maven.org/artifact/io.aeris-
 
 ### Generate extension functions to access your private members in tests
 
-#### Configuring the annotation processor
+#### Configure the annotation processor
 
 To facilitate the access to the private members in a test context Katadioptre generates for you extended functions
 accessible, that route the calls to the private members using reflection.
