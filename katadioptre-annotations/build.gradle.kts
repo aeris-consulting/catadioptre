@@ -12,9 +12,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-rootProject.name = "katadioptre-root"
+plugins {
+    java
+    kotlin("jvm")
+}
 
-include("katadioptre")
-include("katadioptre-annotations")
-include("katadioptre-kotlin-dsl-example")
-include("katadioptre-groovy-dsl-example")
+java {
+    description = "Generates code to use your private and protected functions and properties in tests"
+}
+
+val kotlinpoetVersion: String by project
+
+dependencies {
+    compileOnly(kotlin("stdlib"))
+    compileOnly(project(":katadioptre"))
+    implementation("com.squareup:kotlinpoet:$kotlinpoetVersion")
+    implementation("com.squareup:kotlinpoet-classinspector-elements:$kotlinpoetVersion")
+    implementation("com.squareup:kotlinpoet-metadata-specs:$kotlinpoetVersion")
+}

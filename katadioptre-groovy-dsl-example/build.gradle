@@ -1,0 +1,44 @@
+/*
+ * Copyright 2021 AERIS-Consulting e.U.
+ *
+ * AERIS-Consulting e.U. licenses this file to you under the Apache License, version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at:
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+apply plugin: 'java'
+apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'kotlin-kapt'
+
+
+description = "Katadioptre Example with Groovy DSL - Tests and demos the application of the annotations"
+
+// Adds the generated sources to the test sources.
+kotlin.sourceSets["test"].kotlin.srcDir("build/generated/source/kaptKotlin/katadioptre")
+
+def junitVersion = project.properties["junitVersion"]
+def assertkVersion = project.properties["assertkVersion"]
+
+kapt.useBuildCache = false
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+
+    compileOnly(project(":katadioptre-annotations"))
+
+    kapt(project(":katadioptre-annotations"))
+
+    testImplementation(project(":katadioptre"))
+    testImplementation "com.willowtreeapps.assertk:assertk:$assertkVersion"
+    testImplementation "com.willowtreeapps.assertk:assertk-jvm:$assertkVersion"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+}
+
+project.tasks.findAll { it instanceof AbstractPublishToMaven }.each { it.enabled = false }

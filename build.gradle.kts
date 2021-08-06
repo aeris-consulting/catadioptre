@@ -1,14 +1,29 @@
+/*
+ * Copyright 2021 AERIS-Consulting e.U.
+ *
+ * AERIS-Consulting e.U. licenses this file to you under the Apache License, version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at:
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
 
 plugins {
     idea
     java
     kotlin("jvm") version "1.4.30"
     kotlin("kapt") version "1.4.30"
-    kotlin("plugin.allopen") version "1.4.30"
     id("net.ltgt.apt") version "0.21" apply false
 
     id("nebula.contacts") version "5.1.0"
@@ -20,54 +35,41 @@ plugins {
     signing
 }
 
-
 tasks.withType<Wrapper> {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-val target = JavaVersion.VERSION_11
-java {
-    description = "Katadioptre - Reflection utils for testing in Kotlin"
-}
-
-val assertkVersion: String by project
-val kotlinCoroutinesVersion: String by project
-
-dependencies {
-    implementation(kotlin("stdlib"))
-    implementation(kotlin("reflect"))
-
-    testImplementation("com.willowtreeapps.assertk:assertk:$assertkVersion")
-    testImplementation("com.willowtreeapps.assertk:assertk-jvm:$assertkVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${kotlinCoroutinesVersion}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.2")
-}
+val target = JavaVersion.VERSION_1_8
+val kotlinCompileTarget = "1.8"
 
 allprojects {
     group = "io.aeris-consulting"
     version = File(rootDir, "project.version").readText().trim()
 
     apply(plugin = "java")
-    apply(plugin = "net.ltgt.apt")
     apply(plugin = "nebula.contacts")
     apply(plugin = "nebula.info")
     apply(plugin = "nebula.maven-publish")
     apply(plugin = "nebula.maven-scm")
     apply(plugin = "nebula.maven-manifest")
     apply(plugin = "nebula.maven-developer")
+    apply(plugin = "nebula.maven-apache-license")
     apply(plugin = "signing")
     apply(plugin = "nebula.javadoc-jar")
     apply(plugin = "nebula.source-jar")
 
     infoBroker {
-        excludedManifestProperties = listOf("Module-Owner", "Module-Email", "Module-Source")
+        excludedManifestProperties = listOf(
+            "Manifest-Version", "Module-Owner", "Module-Email", "Module-Source",
+            "Built-OS", "Build-Host", "Build-Job", "Build-Host", "Build-Job", "Build-Number", "Build-Id", "Build-Url",
+            "Built-Status"
+        )
     }
 
     contacts {
-        addPerson("eric.jesse@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
-            moniker = "Eric Jessé"
-            github = "ericjesse"
+        addPerson("katadioptre@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
+            moniker = "AERIS-Consulting e.U."
+            github = "aeris-consulting"
             role("Owner")
         })
     }
@@ -75,19 +77,9 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven {
-            name = "bintray"
-            setUrl("https://jcenter.bintray.com")
-        }
-        maven {
-            name = "rubygems"
-            setUrl("https://rubygems-proxy.torquebox.org/releases")
-        }
     }
 
     java {
-        description = "Katadioptre - Reflection utils for testing in Kotlin"
-
         sourceCompatibility = target
         targetCompatibility = target
     }
@@ -95,7 +87,9 @@ allprojects {
     signing {
         publishing.publications.forEach { sign(it) }
     }
+}
 
+subprojects {
     val ossrhUsername: String? by project
     val ossrhPassword: String? by project
     publishing {
@@ -121,7 +115,7 @@ allprojects {
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
                 useIR = true
-                jvmTarget = target.majorVersion
+                jvmTarget = kotlinCompileTarget
                 javaParameters = true
                 freeCompilerArgs += listOf(
                     "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
@@ -146,7 +140,7 @@ allprojects {
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 
                 debug {
-                    events(*org.gradle.api.tasks.testing.logging.TestLogEvent.values())
+                    events(STARTED, STANDARD_OUT, FAILED, SKIPPED, PASSED, STANDARD_ERROR)
                     exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
                 }
 
@@ -171,4 +165,10 @@ tasks.register("testReport", TestReport::class) {
     this.group = "verification"
     destinationDir = file("${buildDir}/reports/tests")
     reportOn(*(testTasks.toTypedArray()))
+}
+
+tasks {
+    withType<AbstractPublishToMaven> {
+        enabled = false
+    }
 }

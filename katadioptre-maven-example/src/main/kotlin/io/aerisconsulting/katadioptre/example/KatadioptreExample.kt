@@ -12,9 +12,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-rootProject.name = "katadioptre-root"
+package io.aerisconsulting.katadioptre.example
 
-include("katadioptre")
-include("katadioptre-annotations")
-include("katadioptre-kotlin-dsl-example")
-include("katadioptre-groovy-dsl-example")
+import io.aerisconsulting.katadioptre.Testable
+import java.util.Optional
+
+class KatadioptreExample : AbstractKatadioptreExample<Double, Optional<String>>() {
+
+    @Testable
+    private var defaultProperty: Map<String, Double>? = mutableMapOf("any" to 1.0)
+
+    @Testable
+    @Suppress("kotlin:S1144")
+    private fun multiplySum(multiplier: Double = 1.0, vararg valuesToSum: Double?): Double {
+        return valuesToSum.filterNotNull().sum() * multiplier
+    }
+
+}
