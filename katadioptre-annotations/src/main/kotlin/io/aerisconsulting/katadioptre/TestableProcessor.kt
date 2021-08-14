@@ -17,6 +17,7 @@ package io.aerisconsulting.katadioptre
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.jvmName
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
@@ -139,6 +140,7 @@ internal class TestableProcessor : AbstractProcessor() {
                     .prepareFunctionForProperty(enclosingElement, declaringType, false)
                     .returns(propertyTypeName)
                     .addStatement("return this.getProperty(\"$propertyName\")")
+                    .addModifiers(KModifier.INTERNAL)
                     .build()
             )
         }
@@ -150,6 +152,7 @@ internal class TestableProcessor : AbstractProcessor() {
                     .addParameter("value", propertyTypeName)
                     .addStatement("this.setProperty(\"$propertyName\", value)")
                     .prepareFunctionForProperty(enclosingElement, declaringType, true)
+                    .addModifiers(KModifier.INTERNAL)
                     .build()
             )
         }
@@ -160,6 +163,7 @@ internal class TestableProcessor : AbstractProcessor() {
                 FunSpec.builder("clear" + propertyName.capitalize())
                     .addStatement("this.clearProperty(\"$propertyName\")")
                     .prepareFunctionForProperty(enclosingElement, declaringType, true)
+                    .addModifiers(KModifier.INTERNAL)
                     .build()
             )
         }
@@ -205,6 +209,7 @@ internal class TestableProcessor : AbstractProcessor() {
             .addTypeVariables((kmFunction.typeParameters + declaringType.typeParameters).map {
                 specificationUtils.createTypeNameForTypeParameter(declaringType, it)
             })
+            .addModifiers(KModifier.INTERNAL)
             .returns(function.returnType.asTypeName())
 
         kmFunction.valueParameters.forEach { arg ->
