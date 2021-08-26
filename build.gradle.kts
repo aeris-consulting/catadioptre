@@ -12,15 +12,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
-import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
-import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT
-import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
-    idea
     java
     kotlin("jvm") version "1.4.30"
     kotlin("kapt") version "1.4.30"
@@ -67,7 +61,7 @@ allprojects {
     }
 
     contacts {
-        addPerson("katadioptre@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
+        addPerson("catadioptre@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
             moniker = "AERIS-Consulting e.U."
             github = "aeris-consulting"
             role("Owner")
