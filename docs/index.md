@@ -1,0 +1,69 @@
+# Catadioptre
+
+## Easily work with private members when testing in Java and Kotlin
+
+**Catadioptre** is a lightweight library to work with private and protected members in Java and Kotlin using reflection and
+generated "proxies" methods.
+
+With **Catadioptre**, you can:
+* read or write private and protected properties / fields,
+* execute private and protected functions / methods,
+* generate "proxy" methods at compilation-time to easily access to the private members in your tests.
+
+**Catadioptre** supports variable, optional and named arguments in functions as well as `suspend` functions for Kotlin.
+
+## Should I really test my private methods?
+
+Yes and no. A private methods is always part of the implementation of a bigger unit. Best practices encourage to test the feature, not the implementation. Therefore, conventions consist in testing the implementation of a private method through the public ones. 
+
+But let's be honest. Often enough, this makes the testing of the feature more complex: you have to provide all the inputs combinations 
+for all the use-cases to cover all the decision branches and use cases.
+
+So, what are the options?
+* Convert those private pieces into "features", by moving them to dedicated classes as public units.
+* Verify that the convenient pieces of code are called in the execution workflow and that those pieces behave as expected for all the use-cases they support.
+
+The first solution is a commonly used practice, but has a serious drawback: it exposes private pieces of code, (potentially) strength the coupling and reduces the consistency of your code.
+The second solution requires complex logic to access the private units. That's where **Catadioptre** helps you.
+
+## Why using reflection and not byte-code manipulation?
+
+To make private members accessible outside a class and generate "proxy" methods for it, we could have used code generation and manipulation libraries like the excellent [ByteBuddy](https://bytebuddy.net/).
+
+But this would have implied to:
+* Make your tests more verbose, with additional statements comparable to the creation of mocks and stubs,
+* Keep the annotations into the binary classes, making the usage of **Catadioptre** visible at runtime and shipped with your production code,
+* Manipulate the byte code of your production classes, and potentially introducing differences between the "tested" and "actual" version of the classes.
+
+Considering all those impacts, we preferred to apply the following strategy:
+* Use reflection to access the private units: this is indeed a bit slower, but keeps the tested code untouched.
+* Generate "proxy" methods at compile-time in an isolated source path: the annotations of the private units to test are not kept into the binary and the generated classes are not shipped with your production code.
+
+## Why the name Catadioptre?
+
+As describe just above, **Catadioptre** is using reflection to serve its purpose and in French, a "catadioptre" is a reflector you generally use on bicycles or road security equipments.
+
+## How to use Catadioptre?
+
+In order to provide the best experience possible with your language of choice, we created two sets of utils, that
+provide equivalent features but in an idiomatic way.
+
+You can discover how to use Catadioptre **[for Java](./java.md)** or **[for Kotlin](./kotlin.md)**.
+
+You will also find examples in the GitHub repository for both languages, using Gradle and Maven.
+
+## Catadioptre, mocks, stubs and spies
+
+The generated functions and methods are just "facilities" to access to the private and protected members of a class in your tests.
+Hence, they are not used by the main code and are not relevant to mock, stub or spy your instances.
+
+We encourage you to evaluate the absolute necessity to stub or verify a protected or private method in your tests and use
+a mocking library that supports such feature, like [mockk for Kotlin](https://mockk.io/)
+
+## Visibility of classes to generate code
+
+The visibility of the generated code is constrained by the one of the class declaring the testable members.
+
+Classes with a visibility less than `package-protected` are not supported.
+
+**WARNING:** When generating the proxies for Kotlin with Maven, internal classes are not supported. There is no known issue with Gradle.

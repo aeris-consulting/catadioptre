@@ -7,12 +7,12 @@ on:
 
 jobs:
   build:
-    timeout-minutes: 20
+    timeout-minutes: 5
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        java: ['11']
+        java: ['8']
 
     steps:
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
           restore-keys: ${{ runner.os }}-qalipsis-gradle-wrapper-
 
       - name: Tests
-        run: ./gradlew clean check --continue --refresh-dependencies
+        run: ./gradlew clean check --rerun-tasks --continue --refresh-dependencies
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v2

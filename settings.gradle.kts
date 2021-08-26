@@ -12,9 +12,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-rootProject.name = "katadioptre-root"
+rootProject.name = "catadioptre"
 
-include("katadioptre")
-include("katadioptre-annotations")
-include("katadioptre-kotlin-dsl-example")
-include("katadioptre-groovy-dsl-example")
+include("catadioptre-java")
+include("catadioptre-kotlin")
+include("catadioptre-annotations")
+
+include("examples:catadioptre-kotlin-gradle-kotlin-dsl-example")
+include("examples:catadioptre-kotlin-gradle-groovy-dsl-example")
+
+include("examples:catadioptre-java-gradle-kotlin-dsl-example")
+include("examples:catadioptre-java-gradle-groovy-dsl-example")
