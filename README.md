@@ -2,7 +2,7 @@
 
 ## Easily work with private members when testing in Java and Kotlin
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.aeris-consulting/catadioptre-annotations.svg?color=blue&label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.aeris-consulting%22%20AND%20a:%22catadioptre*%22)
+[![Maven Central](https://img.shields.io/maven-central/v/io.aeris-consulting/catadioptre-annotations.svg?color=blue&label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.aeris-consulting%22%20AND%20a:catadioptre-*)
 [![Build](https://github.com/aeris-consulting/catadioptre/actions/workflows/gradle-master.yml/badge.svg)](https://github.com/aeris-consulting/catadioptre/actions/workflows/gradle-master.yml)
 [![Scan with Detekt](https://github.com/aeris-consulting/catadioptre/actions/workflows/detekt-analysis.yml/badge.svg)](https://github.com/aeris-consulting/catadioptre/actions/workflows/detekt-analysis.yml)
 
