@@ -17,6 +17,7 @@ package io.aerisconsulting.catadioptre.example
 import io.aerisconsulting.catadioptre.KTestable
 import java.util.Optional
 
+@Suppress("kotlin:S1144")
 internal class CatadioptreExample : AbstractCatadioptreExample<Double, Optional<String>>() {
 
     @KTestable
@@ -28,4 +29,12 @@ internal class CatadioptreExample : AbstractCatadioptreExample<Double, Optional<
         return valuesToSum.filterNotNull().sum() * multiplier
     }
 
+    /**
+     * This class can actually not be tested, because the type InternalCatadioptreExample is private.
+     * But it should not generate any compilation issue and be simply ignored.
+     */
+    @KTestable
+    private fun createListOfInternalClasses() = listOf(InternalCatadioptreExample())
+
+    private class InternalCatadioptreExample
 }
