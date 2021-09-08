@@ -67,3 +67,13 @@ The visibility of the generated code is constrained by the one of the class decl
 Classes with a visibility less than `package-protected` are not supported.
 
 **WARNING:** When generating the proxies for Kotlin with Maven, internal classes are not supported. There is no known issue with Gradle.
+
+## Further currently known limitations
+
+We are still in the development phase and improving the library as fast as we can. Here are known limitations:
+* There are two different annotations to enable the proxy generation for Java and Kotlin, we plan to consolidate them in a near future
+* Integration with Gradle and Maven is not optimal, we will create plugins to make the work with Catadioptre more transparent
+* Kotlin extended members are not supported
+* Members in anonymous classes are not supported
+
+We are heavily working to remove those limitations and improve your experience as much as possible.

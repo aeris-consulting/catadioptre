@@ -1,6 +1,7 @@
 package io.aerisconsulting.catadioptre.example;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.assertj.core.api.Assertions;
@@ -113,5 +114,17 @@ class CatadioptreExampleTest {
 		double result = TestableAbstractCatadioptreExample.divideSum(instance, 2.0, new Double[]{1.0, 3.0, 6.0});
 
 		Assertions.assertThat(result).isEqualTo(5.0);
+	}
+
+	@Test
+	@DisplayName("should execute the function with parameters using lowest visibility")
+	void shouldExecuteTheFunctionWithParametersOfLowerVisibility() {
+		Map<String, Double> defaultProperty = new HashMap<>();
+		defaultProperty.put("any", 1.0);
+		CatadioptreExample instance = new CatadioptreExample(defaultProperty, 1.0, Optional.empty());
+
+		List<DefaultCatadioptreExample> result = TestableCatadioptreExample.callMethodWithLowVisibilityReturnType(instance);
+
+		Assertions.assertThat(result).hasSize(1);
 	}
 }

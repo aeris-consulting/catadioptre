@@ -18,6 +18,7 @@ import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.jvmName
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
@@ -25,8 +26,6 @@ import com.squareup.kotlinpoet.metadata.ImmutableKmProperty
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.isInternal
 import com.squareup.kotlinpoet.metadata.isNullable
-import com.squareup.kotlinpoet.metadata.isProtected
-import com.squareup.kotlinpoet.metadata.isPublic
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import io.aerisconsulting.catadioptre.KTestable
 import java.nio.file.Path
@@ -40,8 +39,10 @@ import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.tools.Diagnostic
 
 
 /**
@@ -63,6 +64,8 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
 
     private lateinit var specificationUtils: KotlinSpecificationUtils
 
+    private lateinit var kotlinVisibilityUtils: KotlinVisibilityUtils
+
     companion object {
 
         const val ANNOTATION_CLASS_NAME = "io.aerisconsulting.catadioptre.KTestable"
@@ -76,6 +79,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
         elementUtils = processingEnv.elementUtils
+        kotlinVisibilityUtils = KotlinVisibilityUtils(processingEnv.typeUtils)
         specificationUtils = KotlinSpecificationUtils(
             processingEnv.typeUtils,
             processingEnv.typeUtils.erasure(elementUtils.getTypeElement(Void::class.java.name).asType())
@@ -97,32 +101,39 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
             .groupBy { it.enclosingElement as TypeElement }
             .forEach { (enclosingElement, elements) ->
                 val classContainer = enclosingElement.toImmutableKmClass()
+                val packageName = elementUtils.getPackageOf(enclosingElement.enclosingElement)
+                val testableClassName = "Testable" + enclosingElement.simpleName.toString()
 
-                val classVisibilityModifier = when {
-                    classContainer.isPublic -> KModifier.PUBLIC
-                    classContainer.isInternal -> KModifier.INTERNAL
-                    classContainer.isProtected -> KModifier.PROTECTED
-                    else -> KModifier.PRIVATE
-                }
-
-                if (classVisibilityModifier != KModifier.PRIVATE) {
-                    val packageName = elementUtils.getPackageOf(enclosingElement.enclosingElement)
-                    val testableClassName = "Testable" + enclosingElement.simpleName.toString()
-
-                    val testableClassFile = FileSpec.builder("${packageName}.catadioptre", testableClassName)
-                        .addImport("$packageName", enclosingElement.simpleName.toString())
-                    generatesProxyMethods(
-                        enclosingElement,
-                        classContainer,
-                        elements,
-                        testableClassFile,
-                        classVisibilityModifier
-                    )
-                    testableClassFile.build().writeTo(generatedDirPath)
-                }
+                val testableClassFile = FileSpec.builder("${packageName}.catadioptre", testableClassName)
+                    .addImport("$packageName", enclosingElement.simpleName.toString())
+                generatesProxyMethods(
+                    enclosingElement,
+                    classContainer,
+                    elements,
+                    testableClassFile
+                )
+                testableClassFile.build().writeTo(generatedDirPath)
             }
 
         return true
+    }
+
+    /**
+     * Returns the [KClassVisibility] of the parameter or the container class.
+     */
+    private fun collectDeclaredVisibilities(
+        typeElement: TypeElement,
+        visibilities: MutableList<KClassVisibility>
+    ) {
+        visibilities += when {
+            Modifier.PUBLIC in typeElement.modifiers -> KClassVisibility.PUBLIC
+            typeElement.toImmutableKmClass().isInternal -> KClassVisibility.INTERNAL
+            else -> KClassVisibility.PRIVATE
+        }
+
+        typeElement.typeParameters.forEach {
+            collectDeclaredVisibilities(elementUtils.getTypeElement(it.toString()), visibilities)
+        }
     }
 
     /**
@@ -138,29 +149,49 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         enclosingElement: TypeElement,
         classContainer: ImmutableKmClass,
         elements: List<ExecutableElement>,
-        testableClassFile: FileSpec.Builder,
-        classVisibilityModifier: KModifier
+        testableClassFile: FileSpec.Builder
     ) {
         elements.forEach { element ->
-            val annotation = element.getAnnotation(KTestable::class.java)
+            val methodVisibility = kotlinVisibilityUtils.detectLowestVisibility(element)
             val property = specificationUtils.findProperty(classContainer, element)
-            if (property != null) {
-                generateTestableProperty(
-                    classContainer,
-                    enclosingElement,
-                    property,
-                    testableClassFile,
-                    annotation,
-                    classVisibilityModifier
-                )
+            if (methodVisibility != KModifier.PRIVATE) {
+                val annotation = element.getAnnotation(KTestable::class.java)
+
+                if (property != null) {
+                    generateTestableProperty(
+                        classContainer,
+                        enclosingElement,
+                        property,
+                        testableClassFile,
+                        annotation,
+                        methodVisibility
+                    )
+                } else {
+                    generateTestableFunction(
+                        classContainer,
+                        enclosingElement,
+                        element,
+                        testableClassFile,
+                        methodVisibility
+                    )
+                }
             } else {
-                generateTestableFunction(
-                    classContainer,
-                    enclosingElement,
-                    element,
-                    testableClassFile,
-                    classVisibilityModifier
-                )
+                if (property != null) {
+                    processingEnv.messager.printMessage(
+                        Diagnostic.Kind.WARNING,
+                        "Cannot generate the Catadioptre proxy method for the property " +
+                                "${enclosingElement.asClassName()}.${property.name}, " +
+                                "the type of the receiver or the property has a too low visibility"
+                    )
+                } else {
+                    val kmFunction = specificationUtils.findFunction(classContainer, element)
+                    processingEnv.messager.printMessage(
+                        Diagnostic.Kind.WARNING,
+                        "Cannot generate the Catadioptre proxy method for the function " +
+                                "${enclosingElement.asClassName()}.${kmFunction.signature}, " +
+                                "one of the used type has a too low visibility"
+                    )
+                }
             }
         }
     }
@@ -249,7 +280,6 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
     ) {
         val kmFunction = specificationUtils.findFunction(declaringType, function)
         var functionBuilder = FunSpec.builder(kmFunction.name)
-            .addModifiers(visibility)
             .receiver(enclosingElement.asType().asTypeName())
             .jvmName(function.simpleName.toString())
             .addTypeVariables((kmFunction.typeParameters + declaringType.typeParameters).map {
@@ -263,6 +293,8 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
                     arg.name, specificationUtils.createTypeName(declaringType, arg.type!!)
                 )
         }
+        functionBuilder.addModifiers(visibility)
+
         if (kmFunction.valueParameters.isEmpty()) {
             testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "invokeNoArgs")
             functionBuilder = functionBuilder.addStatement("""return this.invokeNoArgs("${kmFunction.name}")""")

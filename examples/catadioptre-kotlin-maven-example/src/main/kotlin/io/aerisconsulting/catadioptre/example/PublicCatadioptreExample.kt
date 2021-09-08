@@ -15,25 +15,17 @@
 package io.aerisconsulting.catadioptre.example
 
 import io.aerisconsulting.catadioptre.KTestable
-import java.util.Optional
 
-@Suppress("kotlin:S1144")
-internal class CatadioptreExample : AbstractCatadioptreExample<Double, Optional<String>>() {
-
-    @KTestable
-    private var defaultProperty: Map<String, Double>? = mutableMapOf("any" to 1.0)
+@Suppress("kotlin:S1144", "kotlin:S1172")
+class PublicCatadioptreExample {
 
     @KTestable
-    private fun multiplySum(multiplier: Double = 1.0, vararg valuesToSum: Double?): Double {
-        return valuesToSum.filterNotNull().sum() * multiplier
+    private fun callMethodWithInternalClass(catadioptreExample: CatadioptreExample) {
+        println("Calling method using a parameter with internal visibility")
     }
 
-    /**
-     * This class can actually not be tested, because the type InternalCatadioptreExample is private.
-     * But it should not generate any compilation issue and be simply ignored.
-     */
     @KTestable
-    private fun createListOfInternalClasses() = listOf(InternalCatadioptreExample())
-
-    private class InternalCatadioptreExample
+    private fun callMethodWithListInternalClass(catadioptreExample: List<CatadioptreExample>, text: String) {
+        println("Calling method with generic as a type with internal visibility")
+    }
 }

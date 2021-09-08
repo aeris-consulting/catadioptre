@@ -18,6 +18,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeSpec.Builder;
 import com.squareup.javapoet.TypeVariableName;
@@ -31,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -44,6 +46,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
+import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
@@ -98,23 +101,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
 						.computeIfAbsent((TypeElement) element.getEnclosingElement(), k -> new HashSet<>())
 						.add(element));
 
-		annotatedElementsByDeclaringType.forEach((declaringType, elements) -> {
-
-			final Set<Modifier> classModifiers = declaringType.getModifiers();
-			final Modifier visibility;
-			if (classModifiers.contains(Modifier.PUBLIC)) {
-				visibility = Modifier.PUBLIC;
-			} else if (classModifiers.contains(Modifier.PRIVATE)) {
-				visibility = Modifier.PRIVATE;
-			} else {
-				visibility = null;
-			}
-
-			// If the declaring class is private, no code is generated.
-			if (visibility != Modifier.PRIVATE) {
-				generateProxyMethods(declaringType, elements, visibility);
-			}
-		});
+		annotatedElementsByDeclaringType.forEach(this::generateProxyMethods);
 		return true;
 	}
 
@@ -123,32 +110,56 @@ public class JavaTestableProcessor extends AbstractProcessor {
 	 *
 	 * @param declaringType the class declaring the members to proxy
 	 * @param elements the annotated elements
-	 * @param visibility the visibility to apply on the proxy methods
 	 */
-	private void generateProxyMethods(final TypeElement declaringType, final Set<Element> elements,
-			final Modifier visibility) {
+	private void generateProxyMethods(final TypeElement declaringType, final Set<Element> elements) {
 		final String packageName = elementUtils.getPackageOf(declaringType).toString();
 		final String testableClassName = "Testable" + declaringType.getSimpleName().toString();
 		final Builder testableTypeSpec = TypeSpec.classBuilder(testableClassName);
 		testableTypeSpec.addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build());
 
+		final AtomicBoolean generateFile = new AtomicBoolean();
 		elements.forEach(element -> {
 			if (element instanceof ExecutableElement) {
-				addTestableMethod(testableTypeSpec, declaringType, (ExecutableElement) element, visibility);
+				final ExecutableElement methodElement = (ExecutableElement) element;
+				if (JavaVisibilityUtils.canBePublic(methodElement)) {
+					generateFile.set(true);
+					addTestableMethod(testableTypeSpec, declaringType, methodElement, Modifier.PUBLIC);
+				} else {
+					final String methodSignature = declaringType.getQualifiedName() + "." + methodElement;
+					processingEnv.getMessager().printMessage(
+							Diagnostic.Kind.WARNING,
+							"Cannot generate the Catadioptre proxy method for the function " + methodSignature
+									+ ", one of the used type has a too low visibility"
+					);
+				}
 			} else if (element instanceof VariableElement) {
-				addTestableField(testableTypeSpec, declaringType, (VariableElement) element, visibility);
+				final VariableElement variableElement = (VariableElement) element;
+				if (JavaVisibilityUtils.canBePublic(variableElement)) {
+					generateFile.set(true);
+					addTestableField(testableTypeSpec, declaringType, variableElement, Modifier.PUBLIC);
+				} else {
+					final String fieldSignature =
+							declaringType.getQualifiedName() + "." + variableElement.getSimpleName();
+					processingEnv.getMessager().printMessage(
+							Diagnostic.Kind.WARNING,
+							"Cannot generate the Catadioptre proxy method for the function " + fieldSignature
+									+ ", the type of the declaring class or the field has a too low visibility"
+					);
+				}
 			}
 		});
 
 		// Then writes the content of the generated class to the file.
-		try {
-			final JavaFile testableClassFile = JavaFile.builder(packageName, testableTypeSpec.build()).build();
-			testableClassFile.writeTo(generatedDirPath);
-		} catch (IOException e) {
-			processingEnv.getMessager()
-					.printMessage(Kind.ERROR,
-							"Could not generate the testable source for class " + packageName + "."
-									+ declaringType.getSimpleName().toString() + ": " + e.getMessage());
+		if (generateFile.get()) {
+			try {
+				final JavaFile testableClassFile = JavaFile.builder(packageName, testableTypeSpec.build()).build();
+				testableClassFile.writeTo(generatedDirPath);
+			} catch (IOException e) {
+				processingEnv.getMessager()
+						.printMessage(Kind.ERROR,
+								"Could not generate the testable source for class " + packageName + "."
+										+ declaringType.getSimpleName().toString() + ": " + e.getMessage());
+			}
 		}
 	}
 
@@ -189,7 +200,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
 				MethodSpec.methodBuilder(element.getSimpleName().toString()), visibility, false)
 				.addStatement("return $T.getField(instance, $S)", ClassName.get(ReflectionFieldUtils.class),
 						element.getSimpleName())
-				.returns(TypeVariableName.get(element.asType()));
+				.returns(TypeName.get(element.asType()));
 		typeSpecBuilder.addMethod(methodBuilder.build());
 	}
 
@@ -205,7 +216,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
 			final VariableElement element, final Modifier visibility) {
 		final MethodSpec.Builder methodBuilder = prepareProxyMethod(declaringType,
 				MethodSpec.methodBuilder(element.getSimpleName().toString()), visibility, true)
-				.addParameter(TypeVariableName.get(element.asType()), "value")
+				.addParameter(TypeName.get(element.asType()), "value")
 				.addStatement("$T.setField(instance, $S, value)", ClassName.get(ReflectionFieldUtils.class),
 						element.getSimpleName())
 				.addStatement("return instance");
@@ -249,10 +260,10 @@ public class JavaTestableProcessor extends AbstractProcessor {
 			final ExecutableElement element, final Modifier visibility) {
 		final MethodSpec.Builder methodBuilder = prepareProxyMethod(declaringType,
 				MethodSpec.methodBuilder(element.getSimpleName().toString()), visibility, false)
-				.returns(TypeVariableName.get(element.getReturnType()));
+				.returns(TypeName.get(element.getReturnType()));
 		element.getTypeParameters().forEach(e -> methodBuilder.addTypeVariable(TypeVariableName.get(e)));
 		element.getParameters().forEach(p -> methodBuilder.addParameter(
-				ParameterSpec.builder(TypeVariableName.get(p.asType()), p.getSimpleName().toString()).build()));
+				ParameterSpec.builder(TypeName.get(p.asType()), p.getSimpleName().toString()).build()));
 		String params = element.getParameters().stream().map(p -> p.getSimpleName().toString())
 				.collect(Collectors.joining(","));
 		if (!params.isEmpty()) {
