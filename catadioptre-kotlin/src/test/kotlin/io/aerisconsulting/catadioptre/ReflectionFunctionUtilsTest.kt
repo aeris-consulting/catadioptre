@@ -19,6 +19,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 internal class ReflectionFunctionUtilsTest {
 
@@ -168,6 +169,17 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
+    internal fun `should throw original exception when executing function`() {
+        // given
+        val instance = ReflectionUtilsObject()
+
+        // when
+        assertThrows<RuntimeException> {
+            instance.invokeInvisible("throwException")
+        }
+    }
+
+    @Test
     internal fun `should execute a private suspended function without argument`() = runBlockingTest {
         // given
         val instance = SuspendedReflectionUtilsObject()
@@ -311,6 +323,17 @@ internal class ReflectionFunctionUtilsTest {
 
         // then
         assertThat(value).isEqualTo(5)
+    }
+
+    @Test
+    internal fun `should throw original exception when executing suspended function`() = runBlockingTest {
+        // given
+        val instance = ReflectionUtilsObject()
+
+        // when
+        assertThrows<RuntimeException> {
+            instance.coInvokeInvisible("throwExceptionSuspended")
+        }
     }
 
 }

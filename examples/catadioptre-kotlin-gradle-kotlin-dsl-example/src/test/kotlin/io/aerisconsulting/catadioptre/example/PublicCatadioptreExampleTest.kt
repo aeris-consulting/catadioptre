@@ -14,9 +14,11 @@
  */
 package io.aerisconsulting.catadioptre.example
 
+import io.aerisconsulting.catadioptre.example.catadioptre.callMethodThrowingException
 import io.aerisconsulting.catadioptre.example.catadioptre.callMethodWithInternalClass
 import io.aerisconsulting.catadioptre.example.catadioptre.callMethodWithListInternalClass
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 internal class PublicCatadioptreExampleTest {
 
@@ -34,5 +36,14 @@ internal class PublicCatadioptreExampleTest {
         val instanceExample = CatadioptreExample()
 
         instance.callMethodWithListInternalClass(listOf(instanceExample), "test")
+    }
+
+    @Test
+    internal fun `should throw the same exception that the real method`() {
+        val instance = PublicCatadioptreExample()
+
+        assertThrows<IllegalStateException> {
+            instance.callMethodThrowingException("test")
+        }
     }
 }

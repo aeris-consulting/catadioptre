@@ -8,5 +8,9 @@ class DefaultCatadioptreExample {
 	private String toLowerCase(String text) {
 		return text.toLowerCase();
 	}
-	
+
+	@Testable
+	private String callMethodThrowingException(String example) {
+		throw new IllegalStateException(example);
+	}
 }

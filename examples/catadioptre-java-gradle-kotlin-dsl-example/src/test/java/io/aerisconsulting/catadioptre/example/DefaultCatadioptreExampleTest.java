@@ -13,4 +13,14 @@ class DefaultCatadioptreExampleTest {
 		String result = TestableDefaultCatadioptreExample.toLowerCase(instance, "T");
 		Assertions.assertThat(result).isEqualTo("t");
 	}
+
+	@Test
+	@DisplayName("should throw the same exception that the real method")
+	void shouldThrowSameExceptionRealMethod() {
+		DefaultCatadioptreExample instance = new DefaultCatadioptreExample();
+
+		Assertions.assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
+			TestableDefaultCatadioptreExample.callMethodThrowingException(instance, "test");
+		});
+	}
 }

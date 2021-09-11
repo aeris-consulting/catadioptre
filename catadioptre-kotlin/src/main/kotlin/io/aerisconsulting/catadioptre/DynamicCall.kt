@@ -14,6 +14,7 @@
  */
 package io.aerisconsulting.catadioptre
 
+import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -39,7 +40,11 @@ internal class DynamicCall<T>(
         val function = findFunction(instance::class, functionName, arguments.map(Argument::type))
         return if (function != null) {
             val allArguments = prepareFunction(function)
-            function.callBy(allArguments) as T
+            try {
+                function.callBy(allArguments) as T
+            } catch (targetException: InvocationTargetException) {
+                throw targetException.cause!!
+            }
         } else {
             throw IllegalArgumentException("The function $functionName could not be found for the arguments $arguments")
         }
@@ -59,7 +64,11 @@ internal class DynamicCall<T>(
         val function = findFunction(instance::class, functionName, arguments.map(Argument::type))
         return if (function != null) {
             val allArguments = prepareFunction(function)
-            function.callSuspendBy(allArguments) as T
+            try {
+                function.callSuspendBy(allArguments) as T
+            } catch (targetException: InvocationTargetException) {
+                throw targetException.cause!!
+            }
         } else {
             throw IllegalArgumentException("The function $functionName could not be found for the arguments $arguments")
         }
