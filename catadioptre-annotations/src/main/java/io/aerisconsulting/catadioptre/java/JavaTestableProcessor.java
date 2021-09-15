@@ -25,9 +25,8 @@ import com.squareup.javapoet.TypeVariableName;
 import io.aerisconsulting.catadioptre.ReflectionFieldUtils;
 import io.aerisconsulting.catadioptre.ReflectionMethodUtils;
 import io.aerisconsulting.catadioptre.Testable;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -63,7 +62,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
 
 	private Elements elementUtils;
 
-	private Path generatedDirPath;
+	private File generatedDir;
 
 	private JavaSpecificationUtils specificationUtils;
 
@@ -76,11 +75,10 @@ public class JavaTestableProcessor extends AbstractProcessor {
 		try {
 			// Finds out the folder where generated sources are written.
 			final JavaFileObject builderFile = processingEnv.getFiler().createSourceFile("CatadioptreLocationTest");
-			generatedDirPath = Paths.get(Paths.get(builderFile.toUri()).getParent().getParent().toUri().getPath(),
-					"catadioptre");
+			generatedDir = new File(new File(builderFile.getName()).getParentFile().getParentFile(), "catadioptre");
 			builderFile.openWriter().close();
 			builderFile.delete();
-			generatedDirPath.toFile().mkdirs();
+			generatedDir.mkdirs();
 		} catch (IOException e) {
 			processingEnv.getMessager()
 					.printMessage(Kind.ERROR, "Could not detect the generation folder: " + e.getMessage());
@@ -90,7 +88,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
 	@Override
 	public boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv) {
 		final Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(Testable.class);
-		if (annotatedElements.isEmpty() || generatedDirPath == null) {
+		if (annotatedElements.isEmpty() || generatedDir == null) {
 			return false;
 		}
 
@@ -153,7 +151,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
 		if (generateFile.get()) {
 			try {
 				final JavaFile testableClassFile = JavaFile.builder(packageName, testableTypeSpec.build()).build();
-				testableClassFile.writeTo(generatedDirPath);
+				testableClassFile.writeTo(generatedDir);
 			} catch (IOException e) {
 				processingEnv.getMessager()
 						.printMessage(Kind.ERROR,

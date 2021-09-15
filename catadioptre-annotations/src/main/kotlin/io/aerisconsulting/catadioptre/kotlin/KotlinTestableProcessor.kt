@@ -28,8 +28,7 @@ import com.squareup.kotlinpoet.metadata.isInternal
 import com.squareup.kotlinpoet.metadata.isNullable
 import com.squareup.kotlinpoet.metadata.toImmutableKmClass
 import io.aerisconsulting.catadioptre.KTestable
-import java.nio.file.Path
-import java.nio.file.Paths
+import java.io.File
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -60,7 +59,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
 
     private lateinit var elementUtils: Elements
 
-    private lateinit var generatedDirPath: Path
+    private lateinit var generatedDir: File
 
     private lateinit var specificationUtils: KotlinSpecificationUtils
 
@@ -90,10 +89,8 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         val annotatedElements = roundEnv.getElementsAnnotatedWith(KTestable::class.java)
         if (annotatedElements.isEmpty()) return false
 
-        val kaptKotlinGeneratedDir =
-            processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]
-                ?: return false
-        generatedDirPath = Paths.get(Paths.get(kaptKotlinGeneratedDir).parent.toUri().path, "catadioptre")
+        val kaptKotlinGeneratedDir = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME] ?: return false
+        generatedDir = File(File(kaptKotlinGeneratedDir).parentFile, "catadioptre")
 
         annotatedElements
             .filter { it.kind == ElementKind.METHOD }
@@ -112,7 +109,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
                     elements,
                     testableClassFile
                 )
-                testableClassFile.build().writeTo(generatedDirPath)
+                testableClassFile.build().writeTo(generatedDir)
             }
 
         return true
