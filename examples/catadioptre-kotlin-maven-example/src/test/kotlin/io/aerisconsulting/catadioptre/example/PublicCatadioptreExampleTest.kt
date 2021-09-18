@@ -40,8 +40,10 @@ internal class PublicCatadioptreExampleTest {
     internal fun `should throw the same exception that the real method`() {
         val instance = PublicCatadioptreExample()
 
-        assertThrows<IllegalStateException> {
+        val cause = assertThrows<CatadioptreOriginalCauseException> {
             instance.callMethodThrowingException("test")
-        }
+        }.cause
+
+        assertThat(cause?.javaClass).isEqualTo(IllegalStateException::class.java)
     }
 }

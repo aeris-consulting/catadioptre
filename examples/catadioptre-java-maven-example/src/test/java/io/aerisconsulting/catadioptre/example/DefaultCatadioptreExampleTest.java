@@ -19,8 +19,8 @@ class DefaultCatadioptreExampleTest {
 	void shouldThrowSameExceptionRealMethod() {
 		DefaultCatadioptreExample instance = new DefaultCatadioptreExample();
 
-		Assertions.assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
+		Assertions.assertThatExceptionOfType(CatadioptreExecutionException.class).isThrownBy( () -> {
 			TestableDefaultCatadioptreExample.callMethodThrowingException(instance, "test");
-		});
+		}).withCauseInstanceOf(IllegalStateException.class);
 	}
 }

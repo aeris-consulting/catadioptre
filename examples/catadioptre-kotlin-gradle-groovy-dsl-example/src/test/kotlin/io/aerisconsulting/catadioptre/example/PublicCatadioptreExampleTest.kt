@@ -14,6 +14,9 @@
  */
 package io.aerisconsulting.catadioptre.example
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import io.aerisconsulting.catadioptre.CatadioptreOriginalCauseException
 import io.aerisconsulting.catadioptre.example.catadioptre.callMethodWithInternalClass
 import io.aerisconsulting.catadioptre.example.catadioptre.callMethodWithListInternalClass
 import io.aerisconsulting.catadioptre.example.catadioptre.callMethodThrowingException
@@ -42,9 +45,11 @@ internal class PublicCatadioptreExampleTest {
     internal fun `should throw the same exception that the real method`() {
         val instance = PublicCatadioptreExample()
 
-        assertThrows<IllegalStateException> {
+        val cause = assertThrows<CatadioptreOriginalCauseException> {
             instance.callMethodThrowingException("test")
-        }
+        }.cause
+
+        assertThat(cause?.javaClass).isEqualTo(IllegalStateException::class.java)
     }
 
 }

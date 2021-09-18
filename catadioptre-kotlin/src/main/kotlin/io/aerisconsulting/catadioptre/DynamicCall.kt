@@ -43,7 +43,7 @@ internal class DynamicCall<T>(
             try {
                 function.callBy(allArguments) as T
             } catch (targetException: InvocationTargetException) {
-                throw targetException.cause!!
+                throw CatadioptreOriginalCauseException(targetException.cause!!)
             }
         } else {
             throw IllegalArgumentException("The function $functionName could not be found for the arguments $arguments")
@@ -67,7 +67,7 @@ internal class DynamicCall<T>(
             try {
                 function.callSuspendBy(allArguments) as T
             } catch (targetException: InvocationTargetException) {
-                throw targetException.cause!!
+                throw CatadioptreOriginalCauseException(targetException.cause!!)
             }
         } else {
             throw IllegalArgumentException("The function $functionName could not be found for the arguments $arguments")

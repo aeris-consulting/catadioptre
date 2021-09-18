@@ -1,5 +1,6 @@
 package io.aerisconsulting.catadioptre.example;
 
+import io.aerisconsulting.catadioptre.CatadioptreOriginalCauseException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,8 +20,8 @@ class DefaultCatadioptreExampleTest {
 	void shouldThrowSameExceptionRealMethod() {
 		DefaultCatadioptreExample instance = new DefaultCatadioptreExample();
 
-		Assertions.assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
+		Assertions.assertThatExceptionOfType(CatadioptreOriginalCauseException.class).isThrownBy( () -> {
 			TestableDefaultCatadioptreExample.callMethodThrowingException(instance, "test");
-		});
+		}).withCauseInstanceOf(IllegalStateException.class);
 	}
 }

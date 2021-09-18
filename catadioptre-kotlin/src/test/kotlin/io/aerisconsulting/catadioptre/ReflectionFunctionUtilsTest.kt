@@ -16,7 +16,9 @@ package io.aerisconsulting.catadioptre
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isIn
 import assertk.assertions.isNull
+import assertk.assertions.isSameAs
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -174,9 +176,11 @@ internal class ReflectionFunctionUtilsTest {
         val instance = ReflectionUtilsObject()
 
         // when
-        assertThrows<RuntimeException> {
+        val cause = assertThrows<CatadioptreOriginalCauseException> {
             instance.invokeInvisible("throwException")
-        }
+        }.cause
+
+        assertThat(cause?.javaClass).isEqualTo(java.lang.RuntimeException::class.java)
     }
 
     @Test
@@ -292,7 +296,7 @@ internal class ReflectionFunctionUtilsTest {
     @Test
     internal fun `should execute an inherited suspended function with omitted argument`() = runBlockingTest {
         // given
-        val instance = ReflectionUtilsObject()
+        val instance = SuspendedReflectionUtilsObject()
 
         // when
         val value: Int = instance.coInvokeInvisible("returnInheritedProvidedOrValue", omitted<Int>())
@@ -304,7 +308,7 @@ internal class ReflectionFunctionUtilsTest {
     @Test
     internal fun `should execute an inherited suspended function with all indexed arguments`() = runBlockingTest {
         // given
-        val instance = ReflectionUtilsObject()
+        val instance = SuspendedReflectionUtilsObject()
 
         // when
         val value: Int = instance.coInvokeInvisible("inheritedDivide", 12, 6)
@@ -316,7 +320,7 @@ internal class ReflectionFunctionUtilsTest {
     @Test
     internal fun `should execute an inherited suspended function with an argument and vararg`() = runBlockingTest {
         // given
-        val instance = ReflectionUtilsObject()
+        val instance = SuspendedReflectionUtilsObject()
 
         // when
         val value: Int = instance.coInvokeInvisible("inheritedDivideSum", 2, vararg(1, 3, 6))
@@ -328,12 +332,13 @@ internal class ReflectionFunctionUtilsTest {
     @Test
     internal fun `should throw original exception when executing suspended function`() = runBlockingTest {
         // given
-        val instance = ReflectionUtilsObject()
+        val instance = SuspendedReflectionUtilsObject()
 
         // when
-        assertThrows<RuntimeException> {
+        val cause = assertThrows<CatadioptreOriginalCauseException> {
             instance.coInvokeInvisible("throwExceptionSuspended")
-        }
+        }.cause
+        assertThat(cause?.javaClass).isEqualTo(java.lang.RuntimeException::class.java)
     }
 
 }

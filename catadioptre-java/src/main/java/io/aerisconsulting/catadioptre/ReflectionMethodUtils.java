@@ -53,9 +53,9 @@ public class ReflectionMethodUtils {
 	 * Executes a method that cannot be accessible in the caller scope.
 	 *
 	 * @param instance the instance for the "this" of the executed method
-	 * @param name the name of the method to execute
-	 * @param value the arguments to pass to the method, which can be eiter
-	 * @param <T> the type of the result
+	 * @param name     the name of the method to execute
+	 * @param value    the arguments to pass to the method, which can be eiter
+	 * @param <T>      the type of the result
 	 * @return the result of the execution of the method {@code name} on {@code instance}
 	 */
 	public static <T> T executeInvisible(Object instance, String name, Object... value) {
@@ -79,7 +79,9 @@ public class ReflectionMethodUtils {
 		try {
 			//noinspection unchecked
 			return (T) method.invoke(instance, argumentsValues.toArray());
-		} catch (InvocationTargetException | IllegalAccessException e) {
+		} catch (InvocationTargetException e) {
+			throw new CatadioptreOriginalCauseException(e.getCause());
+		} catch (Exception e) {
 			throw new CatadioptreException(e);
 		}
 	}
@@ -106,8 +108,7 @@ public class ReflectionMethodUtils {
 	}
 
 	/**
-	 * Determines if each parameter type of a method, is either the class or a superclass or superinterface of the type
-	 * of the argument with the same index.
+	 * Determines if each parameter type of a method, is either the class or a superclass or superinterface of the type of the argument with the same index.
 	 */
 	private static boolean areArgumentsAssignable(Class<?>[] parameterTypes, Argument[] argumentDefinitions) {
 		if (parameterTypes.length != argumentDefinitions.length) {

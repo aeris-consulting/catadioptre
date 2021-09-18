@@ -118,4 +118,17 @@ class ReflectionMethodUtilsTest {
 		// then
 		Assertions.assertEquals(5.0, result);
 	}
+
+	@Test
+	void shouldThrowOriginalCauseOfException() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+		// given
+		final ReflectionUtilsObject object = new ReflectionUtilsObject();
+
+		// when
+		Throwable cause = Assertions.assertThrows(CatadioptreOriginalCauseException.class, () ->
+				ReflectionMethodUtils.executeInvisible(object, "throwException")
+		);
+
+		Assertions.assertEquals(RuntimeException.class, cause.getCause().getClass());
+	}
 }

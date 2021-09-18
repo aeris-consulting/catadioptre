@@ -52,8 +52,7 @@ open class SuspendedParentReflectionUtilsObject(
 
     private suspend fun inheritedDivideSum(divider: Int = 1, vararg values: Int) = values.sum() / divider
 
-
-    private fun throwExceptionSuspended(): Nothing = throw RuntimeException("")
+    private suspend fun throwExceptionSuspended(): Nothing = throw RuntimeException("")
 
 }
 
