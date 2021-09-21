@@ -27,6 +27,8 @@ plugins {
     id("nebula.maven-manifest") version "17.3.3"
     id("nebula.maven-apache-license") version "17.3.3"
     signing
+
+    id("org.sonarqube") version "3.3"
 }
 
 tasks.withType<Wrapper> {
@@ -164,5 +166,13 @@ tasks.register("testReport", TestReport::class) {
 tasks {
     withType<AbstractPublishToMaven> {
         enabled = false
+    }
+}
+
+sonarqube {
+    properties {
+        property("sonar.projectKey", "aeris-consulting_catadioptre")
+        property("sonar.organization", "aeris-consulting")
+        property("sonar.host.url", "https://sonarcloud.io")
     }
 }
