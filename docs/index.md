@@ -71,8 +71,11 @@ Classes with a visibility less than `package-protected` are not supported.
 ## Further currently known limitations
 
 We are still in the development phase and improving the library as fast as we can. Here are known limitations:
-* There are two different annotations to enable the proxy generation for Java and Kotlin, we plan to consolidate them in a near future
-* Integration with Gradle and Maven is not optimal, we will create plugins to make the work with Catadioptre more transparent
+* Static code is not supported
+* There are two different annotations to enable the proxy generation for Java and Kotlin, we plan to consolidate them in
+  a near future
+* Integration with Gradle and Maven is not optimal, we will create plugins to make the work with Catadioptre more
+  transparent
 * Kotlin extended members are not supported
 * Members in anonymous classes are not supported
 
