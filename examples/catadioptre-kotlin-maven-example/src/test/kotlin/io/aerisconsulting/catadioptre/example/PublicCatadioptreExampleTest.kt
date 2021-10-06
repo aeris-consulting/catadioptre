@@ -35,4 +35,15 @@ internal class PublicCatadioptreExampleTest {
 
         instance.callMethodWithListInternalClass(listOf(instanceExample), "test")
     }
+
+    @Test
+    internal fun `should throw the same exception that the real method`() {
+        val instance = PublicCatadioptreExample()
+
+        val cause = assertThrows<CatadioptreOriginalCauseException> {
+            instance.callMethodThrowingException("test")
+        }.cause
+
+        assertThat(cause?.javaClass).isEqualTo(IllegalStateException::class.java)
+    }
 }

@@ -28,4 +28,9 @@ class PublicCatadioptreExample {
     private fun callMethodWithListInternalClass(catadioptreExample: List<CatadioptreExample>, text: String) {
         println("Calling method with generic as a type with internal visibility")
     }
+
+    @KTestable
+    private fun callMethodThrowingException(example: String) {
+        throw IllegalStateException(example)
+    }
 }

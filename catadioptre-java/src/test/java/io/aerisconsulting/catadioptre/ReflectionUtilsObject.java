@@ -31,4 +31,8 @@ public class ReflectionUtilsObject extends ParentReflectionUtilsObject {
 	private double divideSum(int divider, List<Integer> values) {
 		return values.stream().filter(Objects::nonNull).mapToInt(i -> i).sum() / divider;
 	}
+
+	private void throwException() {
+		throw new RuntimeException("");
+	}
 }
