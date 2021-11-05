@@ -52,7 +52,7 @@ import javax.tools.Diagnostic
  */
 @DelicateKotlinPoetApi("Awareness of delicate aspect")
 @KotlinPoetMetadataPreview
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedAnnotationTypes(KotlinTestableProcessor.ANNOTATION_CLASS_NAME)
 @SupportedOptions(KotlinTestableProcessor.KAPT_KOTLIN_GENERATED_OPTION_NAME)
 internal class KotlinTestableProcessor : AbstractProcessor() {

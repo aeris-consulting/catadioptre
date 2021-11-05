@@ -16,8 +16,10 @@ package io.aerisconsulting.catadioptre.kotlin
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.metadata.ImmutableKmClass
 import com.squareup.kotlinpoet.metadata.ImmutableKmFunction
 import com.squareup.kotlinpoet.metadata.ImmutableKmProperty
@@ -26,6 +28,9 @@ import com.squareup.kotlinpoet.metadata.ImmutableKmTypeParameter
 import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
 import com.squareup.kotlinpoet.metadata.isNullable
 import kotlinx.metadata.KmClassifier
+import kotlinx.metadata.KmVariance
+import kotlinx.metadata.KmVariance.IN
+import kotlinx.metadata.KmVariance.INVARIANT
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
@@ -60,9 +65,32 @@ internal class KotlinSpecificationUtils(
             className = className.copy(nullable = true) as ClassName
         }
         return if (type.arguments.isNotEmpty()) {
-            className.parameterizedBy(type.arguments.map { createTypeName(declaringType, it.type!!) })
+            className.parameterizedBy(type.arguments.map { arg ->
+                when (arg.variance) {
+                    INVARIANT -> createTypeName(declaringType, arg.type!!)
+                    null -> STAR
+                    else -> createVariantTypeName(arg.variance!!, declaringType, arg.type!!)
+                }
+            })
         } else {
             className
+        }
+    }
+
+    /**
+     * Creates a [TypeName] for a variant.
+     */
+    private fun createVariantTypeName(
+        variance: KmVariance,
+        declaringType: ImmutableKmClass,
+        type: ImmutableKmType
+    ): TypeName {
+        return WildcardTypeName.run {
+            if (variance == IN) {
+                consumerOf(createTypeName(declaringType, type))
+            } else {
+                producerOf(createTypeName(declaringType, type))
+            }
         }
     }
 
