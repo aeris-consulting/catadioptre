@@ -12,6 +12,7 @@ import javax.lang.model.type.NoType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 
 /**
  * Service in charge of verifying the visibility of the elements used by methods and fields in order to verify their
@@ -57,7 +58,8 @@ class JavaVisibilityUtils {
 	 * @param methodElement the element to inspect
 	 * @param collectedModifiers the set containing the collected modifiers
 	 */
-	private static void collectVisibilities(final ExecutableElement methodElement, final Set<Modifier> collectedModifiers) {
+	private static void collectVisibilities(final ExecutableElement methodElement,
+			final Set<Modifier> collectedModifiers) {
 		if (methodElement.getEnclosingElement().getModifiers().contains(Modifier.PRIVATE)) {
 			// If the class is private, we cannot generate proxy for its methods.
 			collectedModifiers.add(Modifier.PRIVATE);
@@ -84,6 +86,11 @@ class JavaVisibilityUtils {
 			collectVisibilities((DeclaredType) type, collectedModifiers);
 		} else if (type instanceof TypeVariable) {
 			collectVisibilities(((TypeVariable) type).getUpperBound(), collectedModifiers);
+		} else if (type instanceof WildcardType) {
+			final WildcardType wildcardType = (WildcardType) type;
+			if (wildcardType.getExtendsBound() != null) {
+				collectVisibilities(wildcardType.getExtendsBound(), collectedModifiers);
+			}
 		} else if (!(type instanceof NoType)) {
 			throw new IllegalArgumentException("Not supported type: " + type + " being a " + type.getClass());
 		}

@@ -21,15 +21,12 @@ java {
     description = "Generates code to use your private and protected members in tests, for Java and Kotlin"
 }
 
-val kotlinpoetVersion: String by project
-val javapoetVersion: String by project
-
 dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(project(":catadioptre-kotlin"))
     implementation(project(":catadioptre-java"))
-    implementation("com.squareup:kotlinpoet:$kotlinpoetVersion")
-    implementation("com.squareup:kotlinpoet-classinspector-elements:$kotlinpoetVersion")
-    implementation("com.squareup:kotlinpoet-metadata-specs:$kotlinpoetVersion")
-    implementation("com.squareup:javapoet:$javapoetVersion")
+    implementation("com.squareup:kotlinpoet:1.10.2")
+    implementation("com.squareup:kotlinpoet-classinspector-elements:1.9.0")
+    implementation("com.squareup:kotlinpoet-metadata-specs:1.9.0")
+    implementation("com.squareup:javapoet:1.13.0")
 }

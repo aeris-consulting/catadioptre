@@ -33,6 +33,6 @@ public class ReflectionUtilsObject extends ParentReflectionUtilsObject {
 	}
 
 	private void throwException() {
-		throw new RuntimeException("");
+		throw new IllegalArgumentException("This is the exception");
 	}
 }

@@ -129,6 +129,7 @@ class ReflectionMethodUtilsTest {
 				ReflectionMethodUtils.executeInvisible(object, "throwException")
 		);
 
-		Assertions.assertEquals(RuntimeException.class, cause.getCause().getClass());
+		Assertions.assertEquals(IllegalArgumentException.class, cause.getCause().getClass());
+		Assertions.assertEquals("This is the exception", cause.getCause().getMessage());
 	}
 }

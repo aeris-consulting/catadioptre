@@ -16,8 +16,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
     java
-    kotlin("jvm") version "1.4.30"
-    kotlin("kapt") version "1.4.30"
+    kotlin("jvm") version "1.4.31"
+    kotlin("kapt") version "1.4.31"
     id("net.ltgt.apt") version "0.21" apply false
 
     id("nebula.contacts") version "5.1.0"
@@ -110,12 +110,12 @@ subprojects {
 
         withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
-                useIR = true
                 jvmTarget = kotlinCompileTarget
                 javaParameters = true
                 freeCompilerArgs += listOf(
                     "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
                 )
+
             }
         }
 

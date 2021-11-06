@@ -35,7 +35,7 @@ class ReflectionUtilsObject(
         return values.filterNotNull().sum() / divider
     }
 
-    private fun throwException(): Nothing = throw RuntimeException("")
+    private fun throwException(): Nothing = throw IllegalArgumentException("This is the exception")
 
 }
 
@@ -52,7 +52,7 @@ open class SuspendedParentReflectionUtilsObject(
 
     private suspend fun inheritedDivideSum(divider: Int = 1, vararg values: Int) = values.sum() / divider
 
-    private suspend fun throwExceptionSuspended(): Nothing = throw RuntimeException("")
+    private suspend fun throwExceptionSuspended(): Nothing = throw IllegalArgumentException("This is the exception")
 
 }
 

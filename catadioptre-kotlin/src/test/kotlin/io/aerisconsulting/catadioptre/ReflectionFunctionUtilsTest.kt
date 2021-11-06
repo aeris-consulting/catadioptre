@@ -16,9 +16,9 @@ package io.aerisconsulting.catadioptre
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isIn
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
-import assertk.assertions.isSameAs
+import assertk.assertions.prop
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -176,11 +176,12 @@ internal class ReflectionFunctionUtilsTest {
         val instance = ReflectionUtilsObject()
 
         // when
-        val cause = assertThrows<CatadioptreOriginalCauseException> {
+        val exception = assertThrows<Exception> {
             instance.invokeInvisible("throwException")
-        }.cause
+        }
 
-        assertThat(cause?.javaClass).isEqualTo(java.lang.RuntimeException::class.java)
+        assertThat(exception).isInstanceOf(IllegalArgumentException::class)
+            .prop(IllegalArgumentException::message).isEqualTo("This is the exception")
     }
 
     @Test
@@ -335,10 +336,12 @@ internal class ReflectionFunctionUtilsTest {
         val instance = SuspendedReflectionUtilsObject()
 
         // when
-        val cause = assertThrows<CatadioptreOriginalCauseException> {
+        val exception = assertThrows<Exception> {
             instance.coInvokeInvisible("throwExceptionSuspended")
-        }.cause
-        assertThat(cause?.javaClass).isEqualTo(java.lang.RuntimeException::class.java)
+        }
+
+        assertThat(exception).isInstanceOf(IllegalArgumentException::class)
+            .prop(IllegalArgumentException::message).isEqualTo("This is the exception")
     }
 
 }

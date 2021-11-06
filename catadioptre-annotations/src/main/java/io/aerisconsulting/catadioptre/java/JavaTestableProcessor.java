@@ -44,6 +44,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
@@ -54,7 +55,7 @@ import javax.tools.JavaFileObject;
  *
  * @author Eric Jessé
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedAnnotationTypes("io.aerisconsulting.catadioptre.Testable")
 public class JavaTestableProcessor extends AbstractProcessor {
 
@@ -267,7 +268,13 @@ public class JavaTestableProcessor extends AbstractProcessor {
 		if (!params.isEmpty()) {
 			params = ", " + params;
 		}
-		methodBuilder.addStatement("return $T.executeInvisible(instance, $S" + params + ")",
+		final String returnStatement;
+		if (element.getReturnType().getKind() == TypeKind.VOID) {
+			returnStatement = "";
+		} else {
+			returnStatement = "return ";
+		}
+		methodBuilder.addStatement(returnStatement + "$T.executeInvisible(instance, $S" + params + ")",
 				ClassName.get(ReflectionMethodUtils.class),
 				element.getSimpleName().toString());
 		typeSpecBuilder.addMethod(methodBuilder.build());

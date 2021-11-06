@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ 'ubuntu-latest', 'windows-latest' ]
-        java: [ '8', '11' ]
+        java: [ '11' ]
 
     steps:
       - name: Checkout
@@ -43,7 +43,8 @@ jobs:
           restore-keys: ${{ runner.os }}-qalipsis-gradle-wrapper-
 
       - name: Tests
-        run: ./gradlew clean check --rerun-tasks --continue --refresh-dependencies
+        #https://youtrack.jetbrains.com/issue/KT-43704
+        run: ./gradlew clean check --rerun-tasks --continue --refresh-dependencies --stacktrace
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v2

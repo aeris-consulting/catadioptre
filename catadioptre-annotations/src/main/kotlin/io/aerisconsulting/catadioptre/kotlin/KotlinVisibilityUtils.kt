@@ -15,6 +15,7 @@ import javax.lang.model.type.NoType
 import javax.lang.model.type.PrimitiveType
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.type.TypeVariable
+import javax.lang.model.type.WildcardType
 import javax.lang.model.util.Types
 
 @DelicateKotlinPoetApi("Awareness of delicate aspect")
@@ -45,7 +46,8 @@ internal class KotlinVisibilityUtils(
         methodElement: ExecutableElement,
         collectedModifiers: MutableSet<KClassVisibility>
     ) {
-        collectVisibilities(methodElement.receiverType ?: methodElement.enclosingElement.asType(), collectedModifiers)
+        methodElement.receiverType?.let { collectVisibilities(it, collectedModifiers) }
+        methodElement.enclosingElement.asType()?.let { collectVisibilities(it, collectedModifiers) }
         collectVisibilities(methodElement.returnType, collectedModifiers)
         for (parameter in methodElement.parameters) {
             collectVisibilities(parameter.asType(), collectedModifiers)
@@ -71,6 +73,9 @@ internal class KotlinVisibilityUtils(
             }
             is TypeVariable -> {
                 collectVisibilities(type.upperBound, collectedModifiers)
+            }
+            is WildcardType -> {
+                type.extendsBound?.let { collectVisibilities(it, collectedModifiers) }
             }
             is NoType -> {
                 // Nothing to do.
