@@ -46,7 +46,7 @@ internal fun <T> findProperty(instanceClass: KClass<*>, propertyName: String): K
 internal fun findFunction(
     instanceClass: KClass<*>,
     functionName: String,
-    argumentTypes: List<Parameter>
+    arguments: List<Argument>
 ): KFunction<*>? {
     val functions =
         instanceClass.memberFunctions + instanceClass.memberExtensionFunctions + instanceClass.superclasses.flatMap {
@@ -55,16 +55,16 @@ internal fun findFunction(
     val functionsWithName = functions.filter { it.name == functionName }
     return if (functionsWithName.size == 1) {
         functionsWithName.first().apply {
-            areParametersMatching(argumentTypes)
+            areParametersMatching(arguments)
             // If some arguments were not resolved, the one with the same index is applied.
-            argumentTypes.forEachIndexed { index, argumentType ->
+            arguments.map(Argument::type).forEachIndexed { index, argumentType ->
                 if (argumentType.actualParameter == null) {
                     argumentType.actualParameter = this.valueParameters[index]
                 }
             }
         }
     } else {
-        functionsWithName.firstOrNull { it.name == functionName && it.areParametersMatching(argumentTypes) }
+        functionsWithName.firstOrNull { it.areParametersMatching(arguments) }
     }
 }
 
@@ -73,12 +73,12 @@ internal fun findFunction(
  *
  * @author Eric Jessé
  */
-private fun KFunction<*>.areParametersMatching(searchedParameters: List<Parameter>): Boolean {
-    val nonInstanceParameters = this.valueParameters.filterNot { it.kind == KParameter.Kind.INSTANCE }
+private fun KFunction<*>.areParametersMatching(searchedArguments: List<Argument>): Boolean {
+    val valueParameters = this.valueParameters.filter { it.kind == KParameter.Kind.VALUE }
     // If there is a parameter for the instance, we have to shift the arguments indices to the left.
     val offsetIndex = if (this.instanceParameter == null) 0 else -1
-    return if (searchedParameters.size == nonInstanceParameters.size) {
-        nonInstanceParameters.all { searchedParameters[it.index + offsetIndex].matches(it) }
+    return if (searchedArguments.size == valueParameters.size) {
+        valueParameters.all { searchedArguments[it.index + offsetIndex].matches(it) }
     } else {
         false
     }

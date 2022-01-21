@@ -14,6 +14,14 @@ open class ParentReflectionUtilsObject(
 
 }
 
+abstract class AbstractWrapper {
+    abstract val value: String
+}
+
+abstract class AbstractOtherWrapper {
+    abstract val value: String
+}
+
 class ReflectionUtilsObject(
     private val value: Int? = 123,
     inheritedValue: Int = 789
@@ -34,6 +42,10 @@ class ReflectionUtilsObject(
     private fun divideSum(divider: Int = 1, vararg values: Int?): Int {
         return values.filterNotNull().sum() / divider
     }
+
+    private fun extractValue(wrapper: AbstractWrapper): String = wrapper.value
+
+    private fun extractValue(wrapper: AbstractOtherWrapper): String = wrapper.value
 
     private fun throwException(): Nothing = throw IllegalArgumentException("This is the exception")
 

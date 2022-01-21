@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class ReflectionMethodUtilsTest {
 
@@ -120,7 +121,8 @@ class ReflectionMethodUtilsTest {
 	}
 
 	@Test
-	void shouldThrowOriginalCauseOfException() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+	void shouldThrowOriginalCauseOfException()
+			throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
 		// given
 		final ReflectionUtilsObject object = new ReflectionUtilsObject();
 
@@ -131,5 +133,19 @@ class ReflectionMethodUtilsTest {
 
 		Assertions.assertEquals(IllegalArgumentException.class, cause.getCause().getClass());
 		Assertions.assertEquals("This is the exception", cause.getCause().getMessage());
+	}
+
+	@Test
+	void shouldExecuteMethodWhenTheArgumentIsAMockOfAnAbstractClassAndTwoCandidateMethods() {
+		// given
+		final ReflectionUtilsObject object = new ReflectionUtilsObject();
+		final AbstractWrapper mock = Mockito.mock(AbstractWrapper.class);
+		Mockito.when(mock.getValue()).thenReturn("the value");
+
+		// when
+		String result = ReflectionMethodUtils.executeInvisible(object, "extractValue", mock);
+
+		// then
+		Assertions.assertEquals("the value", result);
 	}
 }

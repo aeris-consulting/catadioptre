@@ -14,6 +14,9 @@
  */
 package io.aerisconsulting.catadioptre
 
+import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
+
 /**
  * Descriptor for a function argument passed by the caller.
  *
@@ -23,4 +26,13 @@ data class Argument constructor(
     internal val value: Any?,
     internal val type: Parameter,
     internal val isOmitted: Boolean? = null
-)
+) {
+    internal fun matches(parameter: KParameter): Boolean {
+        val result = type.matches(parameter)
+                || (parameter.type.classifier as? KClass<*>)?.isInstance(value) == true
+        if (result) {
+            this.type.actualParameter = parameter
+        }
+        return result
+    }
+}

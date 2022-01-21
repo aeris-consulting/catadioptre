@@ -19,6 +19,8 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import assertk.assertions.prop
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -185,6 +187,22 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
+    internal fun `should execute a function when the argument is a mock of an abstract class and two candidate methods`() =
+        runBlockingTest {
+            // given
+            val instance = ReflectionUtilsObject()
+            val mock = mockk<AbstractWrapper> {
+                every { value } returns "the value"
+            }
+
+            // when
+            val value: String = instance.invokeInvisible("extractValue", mock)
+
+            // then
+            assertThat(value).isEqualTo("the value")
+        }
+
+    @Test
     internal fun `should execute a private suspended function without argument`() = runBlockingTest {
         // given
         val instance = SuspendedReflectionUtilsObject()
@@ -343,5 +361,4 @@ internal class ReflectionFunctionUtilsTest {
         assertThat(exception).isInstanceOf(IllegalArgumentException::class)
             .prop(IllegalArgumentException::message).isEqualTo("This is the exception")
     }
-
 }

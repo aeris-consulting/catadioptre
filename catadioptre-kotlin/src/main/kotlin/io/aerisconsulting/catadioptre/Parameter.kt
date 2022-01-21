@@ -33,15 +33,10 @@ data class Parameter(
     internal var actualParameter: KParameter? = null
 
     fun matches(parameter: KParameter): Boolean {
-        val result = (name == null || name == parameter.name)
+        return ((name == null || name == parameter.name)
                 && (isVararg == null || parameter.isVararg == isVararg)
                 && (isOptional == null || parameter.isOptional == isOptional)
-                && typesAreMatching(parameter)
-
-        if (result) {
-            this.actualParameter = parameter
-        }
-        return result
+                && typesAreMatching(parameter))
     }
 
     private fun typesAreMatching(parameter: KParameter): Boolean {

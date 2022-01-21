@@ -37,7 +37,7 @@ internal class DynamicCall<T>(
 
     @Suppress("UNCHECKED_CAST")
     internal fun execute(): T {
-        val function = findFunction(instance::class, functionName, arguments.map(Argument::type))
+        val function = findFunction(instance::class, functionName, arguments)
         return if (function != null) {
             val allArguments = prepareFunction(function)
             try {
@@ -61,7 +61,7 @@ internal class DynamicCall<T>(
 
     @Suppress("UNCHECKED_CAST")
     internal suspend fun coExecute(): T {
-        val function = findFunction(instance::class, functionName, arguments.map(Argument::type))
+        val function = findFunction(instance::class, functionName, arguments)
         return if (function != null) {
             val allArguments = prepareFunction(function)
             try {

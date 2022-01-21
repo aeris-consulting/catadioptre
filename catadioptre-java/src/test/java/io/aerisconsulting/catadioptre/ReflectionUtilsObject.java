@@ -32,6 +32,14 @@ public class ReflectionUtilsObject extends ParentReflectionUtilsObject {
 		return values.stream().filter(Objects::nonNull).mapToInt(i -> i).sum() / divider;
 	}
 
+	private String extractValue(AbstractWrapper wrapper) {
+		return wrapper.getValue();
+	}
+
+	private String extractValue(AbstractOtherWrapper wrapper) {
+		return wrapper.getValue();
+	}
+
 	private void throwException() {
 		throw new IllegalArgumentException("This is the exception");
 	}
