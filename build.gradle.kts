@@ -12,20 +12,25 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT
+import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
 
 plugins {
     java
-    kotlin("jvm") version "1.4.31"
-    kotlin("kapt") version "1.4.31"
+    kotlin("jvm") version "1.8.0"
+    kotlin("kapt") version "1.8.0"
     id("net.ltgt.apt") version "0.21" apply false
 
-    id("nebula.contacts") version "5.1.0"
-    id("nebula.info") version "9.1.1"
-    id("nebula.maven-publish") version "17.3.3"
-    id("nebula.maven-scm") version "17.3.3"
-    id("nebula.maven-manifest") version "17.3.3"
-    id("nebula.maven-apache-license") version "17.3.3"
+    id("nebula.contacts") version "6.0.0"
+    id("nebula.info") version "11.4.1"
+    id("nebula.maven-publish") version "18.4.0"
+    id("nebula.maven-scm") version "18.4.0"
+    id("nebula.maven-manifest") version "18.4.0"
+    id("nebula.maven-apache-license") version "18.4.0"
     signing
 
     id("org.sonarqube") version "3.3"
@@ -35,8 +40,8 @@ tasks.withType<Wrapper> {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-val target = JavaVersion.VERSION_1_8
-val kotlinCompileTarget = "1.8"
+val target = JavaVersion.VERSION_11
+val kotlinCompileTarget = "11"
 
 allprojects {
     group = "io.aeris-consulting"

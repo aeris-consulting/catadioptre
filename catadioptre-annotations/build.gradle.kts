@@ -25,8 +25,9 @@ dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(project(":catadioptre-kotlin"))
     implementation(project(":catadioptre-java"))
-    implementation("com.squareup:kotlinpoet:1.10.2")
+    implementation("com.squareup:kotlinpoet:1.13.2")
     implementation("com.squareup:kotlinpoet-classinspector-elements:1.9.0")
     implementation("com.squareup:kotlinpoet-metadata-specs:1.9.0")
     implementation("com.squareup:javapoet:1.13.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0")
 }
