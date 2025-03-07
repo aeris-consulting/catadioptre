@@ -30,7 +30,7 @@ class DefaultPublicTypeTest {
 	}
 
 	@Test
-	@DisplayName("should throw the same exception that the real method")
+	@DisplayName("should throw the same exception than the real method")
 	void shouldThrowSameExceptionRealMethod() {
 		PackageType instance = new PackageType();
 

@@ -1,15 +1,23 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     java
     kotlin("jvm")
 }
 
-java {
-    description = "Reflection utils to use your private and protected functions and properties in Kotlin tests"
-}
+description = "Reflection utils to use your private and protected functions and properties in Kotlin tests"
 
 val junitVersion: String by project
 val assertkVersion: String by project
 val kotlinCoroutinesVersion: String by project
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+        javaParameters = true
+        freeCompilerArgs.add("-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
+}
 
 dependencies {
     compileOnly(kotlin("stdlib"))

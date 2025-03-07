@@ -21,19 +21,12 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
 
 plugins {
     java
-    kotlin("jvm") version "1.8.0"
-    kotlin("kapt") version "1.8.0"
-    id("net.ltgt.apt") version "0.21" apply false
-
-    id("nebula.contacts") version "6.0.0"
-    id("nebula.info") version "11.4.1"
-    id("nebula.maven-publish") version "18.4.0"
-    id("nebula.maven-scm") version "18.4.0"
-    id("nebula.maven-manifest") version "18.4.0"
-    id("nebula.maven-apache-license") version "18.4.0"
+    kotlin("jvm") version "2.0.0" apply false
+    kotlin("kapt") version "2.0.0" apply false
+    `maven-publish`
     signing
 
-    id("org.sonarqube") version "3.3"
+    id("org.sonarqube") version "6.0.+"
 }
 
 tasks.withType<Wrapper> {
@@ -41,39 +34,23 @@ tasks.withType<Wrapper> {
 }
 
 val target = JavaVersion.VERSION_11
-val kotlinCompileTarget = "11"
 
 allprojects {
     group = "io.aeris-consulting"
     version = File(rootDir, "project.version").readText().trim()
-
-    apply(plugin = "java")
-    apply(plugin = "nebula.contacts")
-    apply(plugin = "nebula.info")
-    apply(plugin = "nebula.maven-publish")
-    apply(plugin = "nebula.maven-scm")
-    apply(plugin = "nebula.maven-manifest")
-    apply(plugin = "nebula.maven-developer")
-    apply(plugin = "nebula.maven-apache-license")
     apply(plugin = "signing")
-    apply(plugin = "nebula.javadoc-jar")
-    apply(plugin = "nebula.source-jar")
+    apply(plugin = "maven-publish")
 
-    infoBroker {
-        excludedManifestProperties = listOf(
-            "Manifest-Version", "Module-Owner", "Module-Email", "Module-Source",
-            "Built-OS", "Build-Host", "Build-Job", "Build-Host", "Build-Job", "Build-Number", "Build-Id", "Build-Url",
-            "Built-Status"
-        )
+    val signingKeyId = "signing.keyId"
+    if (System.getProperty(signingKeyId) != null || System.getenv(signingKeyId) != null) {
+        signing {
+            publishing.publications.forEach { sign(it) }
+        }
     }
+}
 
-    contacts {
-        addPerson("catadioptre@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
-            moniker = "AERIS-Consulting e.U."
-            github = "aeris-consulting"
-            role("Owner")
-        })
-    }
+subprojects {
+    apply(plugin = "java")
 
     repositories {
         mavenLocal()
@@ -85,15 +62,38 @@ allprojects {
         targetCompatibility = target
     }
 
-    signing {
-        publishing.publications.forEach { sign(it) }
-    }
-}
-
-subprojects {
+    val project = this
     val ossrhUsername: String? by project
     val ossrhPassword: String? by project
     publishing {
+
+        publications {
+            create<MavenPublication>("maven") {
+                from(components["java"])
+                pom {
+                    name.set(project.name)
+                    description.set(project.description)
+
+                    url.set("https://catadioptre.aeris-consulting.io/")
+                    licenses {
+                        license {
+                            name.set("Apache License, Version 2.0 (Apache-2.0)")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("ericjesse")
+                            name.set("Eric Jessé")
+                        }
+                    }
+                    scm {
+                        url.set("https://github.com/aeris-consulting/catadioptre.git/")
+                    }
+                }
+            }
+        }
+
         repositories {
             maven {
                 val snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
@@ -111,17 +111,6 @@ subprojects {
     tasks {
         withType<Jar> {
             archiveBaseName.set(project.name)
-        }
-
-        withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = kotlinCompileTarget
-                javaParameters = true
-                freeCompilerArgs += listOf(
-                    "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
-                )
-
-            }
         }
 
         val replacedPropertiesInResources = mapOf("project.version" to project.version)

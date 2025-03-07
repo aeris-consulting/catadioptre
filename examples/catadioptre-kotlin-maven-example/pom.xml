@@ -6,14 +6,14 @@
 
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-maven-example</artifactId>
-  <version>0.4.1</version>
+    <version>0.6.0</version>
   <packaging>jar</packaging>
 
   <name>Catadioptre example in Kotlin with Maven - Tests and demos the application of the annotations</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <kotlin.version>1.4.32</kotlin.version>
+    <kotlin.version>2.0.0</kotlin.version>
     <kotlin.code.style>official</kotlin.code.style>
     <junit.version>5.7.2</junit.version>
     <assertk.version>0.23.1</assertk.version>
@@ -46,13 +46,13 @@
     <dependency>
       <groupId>io.aeris-consulting</groupId>
       <artifactId>catadioptre-kotlin</artifactId>
-      <version>0.4.1</version>
+        <version>0.6.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.aeris-consulting</groupId>
       <artifactId>catadioptre-annotations</artifactId>
-      <version>0.4.1</version>
+        <version>0.6.0</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
@@ -109,7 +109,7 @@
                 <annotationProcessorPath>
                   <groupId>io.aeris-consulting</groupId>
                   <artifactId>catadioptre-annotations</artifactId>
-                  <version>0.4.1</version>
+                    <version>0.6.0</version>
                 </annotationProcessorPath>
               </annotationProcessorPaths>
             </configuration>

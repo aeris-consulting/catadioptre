@@ -27,6 +27,7 @@ infix fun <T> Any.invokeNoArgs(methodName: String): T {
     return invokeInvisible(methodName)
 }
 
+
 /**
  * Executes the niladic suspend method [methodName] on this instance and returns the result.
  *

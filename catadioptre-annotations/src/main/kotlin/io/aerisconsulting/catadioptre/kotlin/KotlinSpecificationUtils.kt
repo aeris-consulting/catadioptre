@@ -14,118 +14,125 @@
  */
 package io.aerisconsulting.catadioptre.kotlin
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.STAR
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.TypeVariableName
-import com.squareup.kotlinpoet.WildcardTypeName
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
-import com.squareup.kotlinpoet.metadata.ImmutableKmFunction
-import com.squareup.kotlinpoet.metadata.ImmutableKmProperty
-import com.squareup.kotlinpoet.metadata.ImmutableKmType
-import com.squareup.kotlinpoet.metadata.ImmutableKmTypeParameter
-import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
-import com.squareup.kotlinpoet.metadata.isNullable
-import kotlinx.metadata.KmClassifier
-import kotlinx.metadata.KmVariance
-import kotlinx.metadata.KmVariance.IN
-import kotlinx.metadata.KmVariance.INVARIANT
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asTypeName
+import java.util.Locale
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
-import javax.lang.model.util.Types
 
-@KotlinPoetMetadataPreview
+@OptIn(DelicateKotlinPoetApi::class)
 internal class KotlinSpecificationUtils(
-    private val typeUtils: Types,
     private val unitType: TypeMirror
 ) {
-
-    /**
-     * Generates a [TypeName] for the type of property or parameter.
-     */
-    fun createTypeName(declaringType: ImmutableKmClass, type: ImmutableKmType): TypeName {
-        return when (val classifier = type.classifier) {
-            is KmClassifier.Class ->
-                createTypeNameForClass(declaringType, type, classifier.name.replace('/', '.'))
-            is KmClassifier.TypeParameter -> createTypeNameForTypeParameter(
-                declaringType,
-                declaringType.typeParameters[classifier.id]
-            )
-            else -> throw IllegalArgumentException("Unsupported type $classifier")
-        }
-    }
-
-    /**
-     * Generates a [TypeName] for the type of property or parameter, when it is a class.
-     */
-    private fun createTypeNameForClass(declaringType: ImmutableKmClass, type: ImmutableKmType, name: String): TypeName {
-        var className = ClassName(name.substringBeforeLast("."), name.substringAfterLast("."))
-        if (type.isNullable) {
-            className = className.copy(nullable = true) as ClassName
-        }
-        return if (type.arguments.isNotEmpty()) {
-            className.parameterizedBy(type.arguments.map { arg ->
-                when (arg.variance) {
-                    INVARIANT -> createTypeName(declaringType, arg.type!!)
-                    null -> STAR
-                    else -> createVariantTypeName(arg.variance!!, declaringType, arg.type!!)
-                }
-            })
-        } else {
-            className
-        }
-    }
-
-    /**
-     * Creates a [TypeName] for a variant.
-     */
-    private fun createVariantTypeName(
-        variance: KmVariance,
-        declaringType: ImmutableKmClass,
-        type: ImmutableKmType
-    ): TypeName {
-        return WildcardTypeName.run {
-            if (variance == IN) {
-                consumerOf(createTypeName(declaringType, type))
-            } else {
-                producerOf(createTypeName(declaringType, type))
-            }
-        }
-    }
-
-    /**
-     * Generates a [TypeName] for the type of property or parameter, when it is a type argument from the enclosing class.
-     */
-    fun createTypeNameForTypeParameter(
-        declaringType: ImmutableKmClass,
-        type: ImmutableKmTypeParameter
-    ): TypeVariableName {
-        return TypeVariableName(type.name, bounds = type.upperBounds.map { createTypeName(declaringType, it) })
-    }
 
     /**
      * Finds the Kotlin property matching the [getter], if it exists.
      */
     fun findProperty(
-        enclosingElement: ImmutableKmClass,
+        enclosingElement: TypeSpec,
         getter: ExecutableElement
-    ): ImmutableKmProperty? {
+    ): PropertySpec? {
         val mayBePropertyName = getter.simpleName.toString().substringAfter("get")
-            .substringBefore("$").decapitalize()
+            .substringBefore("$").replaceFirstChar { it.lowercase(Locale.getDefault()) }
         return mayBePropertyName.takeIf { it.isNotBlank() && getter.returnType != unitType }?.let { propertyName ->
-            enclosingElement.properties.firstOrNull { it.name == propertyName }
+            enclosingElement.propertySpecs.firstOrNull { it.name == propertyName }
         }
     }
 
     /**
-     * Finds the Kotlin function from [enclosingElement] corresponding to [function].
+     * Finds the Kotlin function from [typeSpec] corresponding to [function].
      */
-    fun findFunction(
-        enclosingElement: ImmutableKmClass,
-        function: ExecutableElement
-    ): ImmutableKmFunction {
-        return enclosingElement.functions.first { function.jvmMethodSignature(typeUtils) == "${it.signature}" }
+    fun findFunction(typeSpec: TypeSpec, function: ExecutableElement): AnnotatedFunction? {
+        val specCandidates = typeSpec.funSpecs.filter { funSpec ->
+            funSpec.name == function.simpleName.toString()
+                    && funSpec.parameters.size == function.parameters.size
+        }
+
+        return if (specCandidates.size == 1) {
+            AnnotatedFunction(function, specCandidates.first())
+        } else if (specCandidates.isNotEmpty()) {
+            // Due to polymorphism, it is possible to have several methods with same name but different signatures.
+            specCandidates.firstOrNull { funSpec ->
+                funSpec.parameters.mapIndexed { index, parameterSpec ->
+                    areTypesEqual(parameterSpec.type, function.parameters[index].asType().asTypeName())
+                }.all { it }
+            }?.let { AnnotatedFunction(function, it) }
+        } else {
+            null
+        }
+
     }
 
+    /**
+     * Verifies whether a Kotlin type and a Java type are equal.
+     */
+    fun areTypesEqual(kotlinType: TypeName, javaType: TypeName): Boolean {
+        return if (kotlinType.toString() == javaType.toString()) {
+            true
+        } else if (kotlinType is ParameterizedTypeName && javaType is ParameterizedTypeName) {
+            areTypesEqual(kotlinType.rawType, javaType.rawType)
+        } else {
+            JAVA_TO_KOTLIN_EQUIVALENT[javaType.toString()] == kotlinType.toString()
+        }
+    }
+
+    companion object {
+
+        val JAVA_TO_KOTLIN_EQUIVALENT = listOf(
+            // Built-in types.
+            Any::class,
+            Array::class,
+            Boolean::class,
+            BooleanArray::class,
+            Byte::class,
+            ByteArray::class,
+            Char::class,
+            CharArray::class,
+            Double::class,
+            DoubleArray::class,
+            Enum::class,
+            Float::class,
+            FloatArray::class,
+            Int::class,
+            IntArray::class,
+            Long::class,
+            LongArray::class,
+            Nothing::class,
+            Number::class,
+            Short::class,
+            ShortArray::class,
+            String::class,
+            Throwable::class,
+            Annotation::class,
+            CharSequence::class,
+            Comparable::class,
+
+            // Collections.
+            Collection::class,
+            MutableCollection::class,
+            Map::class,
+            MutableMap::class,
+            List::class,
+            MutableList::class,
+            Set::class,
+            MutableSet::class,
+            Iterable::class,
+            MutableIterable::class,
+            Iterator::class,
+            MutableIterator::class,
+            ListIterator::class,
+            MutableListIterator::class,
+            ArrayList::class,
+            HashMap::class,
+            HashSet::class,
+            LinkedHashMap::class,
+            LinkedHashSet::class,
+            RandomAccess::class,
+        ).associate { it.java.canonicalName to it.qualifiedName }
+
+    }
 }

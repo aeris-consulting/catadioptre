@@ -83,7 +83,7 @@ internal class CatadioptreExampleTest {
     internal fun `should execute the function without argument`() {
         val instance = CatadioptreExample()
 
-        val result = instance.multiplySum(2.0, arrayOf(1.0, 3.0, 6.0))
+        val result = instance.multiplySum(2.0, 1.0, 3.0, 6.0)
 
         assertThat(result).isEqualTo(20.0)
     }
@@ -101,7 +101,7 @@ internal class CatadioptreExampleTest {
     internal fun `should execute the function of parent with variable arguments`() {
         val instance = CatadioptreExample()
 
-        val result = instance.divideSum(2.0, arrayOf(1.0, 3.0, 6.0))
+        val result = instance.divideSum(2.0, 1.0, 3.0, 6.0)
 
         assertThat(result).isEqualTo(5.0)
     }

@@ -18,17 +18,18 @@ import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.jvmName
-import com.squareup.kotlinpoet.metadata.ImmutableKmClass
-import com.squareup.kotlinpoet.metadata.ImmutableKmProperty
-import com.squareup.kotlinpoet.metadata.KotlinPoetMetadataPreview
-import com.squareup.kotlinpoet.metadata.isInternal
-import com.squareup.kotlinpoet.metadata.isNullable
-import com.squareup.kotlinpoet.metadata.toImmutableKmClass
+import com.squareup.kotlinpoet.metadata.classinspectors.ElementsClassInspector
+import com.squareup.kotlinpoet.metadata.specs.ClassInspector
+import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import io.aerisconsulting.catadioptre.KTestable
 import java.io.File
+import java.util.Locale
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -38,11 +39,10 @@ import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
-import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 import javax.tools.Diagnostic
-
 
 /**
  *
@@ -51,11 +51,12 @@ import javax.tools.Diagnostic
  * @author Eric Jessé
  */
 @DelicateKotlinPoetApi("Awareness of delicate aspect")
-@KotlinPoetMetadataPreview
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
 @SupportedAnnotationTypes(KotlinTestableProcessor.ANNOTATION_CLASS_NAME)
 @SupportedOptions(KotlinTestableProcessor.KAPT_KOTLIN_GENERATED_OPTION_NAME)
 internal class KotlinTestableProcessor : AbstractProcessor() {
+
+    private lateinit var typeUtils: Types
 
     private lateinit var elementUtils: Elements
 
@@ -64,6 +65,8 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
     private lateinit var specificationUtils: KotlinSpecificationUtils
 
     private lateinit var kotlinVisibilityUtils: KotlinVisibilityUtils
+
+    private lateinit var classInspector: ClassInspector
 
     companion object {
 
@@ -78,11 +81,17 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
         elementUtils = processingEnv.elementUtils
-        kotlinVisibilityUtils = KotlinVisibilityUtils(processingEnv.typeUtils)
+        typeUtils = processingEnv.typeUtils
         specificationUtils = KotlinSpecificationUtils(
-            processingEnv.typeUtils,
-            processingEnv.typeUtils.erasure(elementUtils.getTypeElement(Void::class.java.name).asType())
+            typeUtils.erasure(elementUtils.getTypeElement(Void::class.java.name).asType())
         )
+        runCatching {
+            // When the processing is initialized in a pure Java environment, the processor is created, but the
+            // inspector cannot be created. Which does not matter, since there is no
+            // KTestable to run.
+            classInspector = ElementsClassInspector.create(true, elementUtils, typeUtils)
+            kotlinVisibilityUtils = KotlinVisibilityUtils(classInspector, elementUtils)
+        }
     }
 
     override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
@@ -91,152 +100,286 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
 
         val kaptKotlinGeneratedDir = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME] ?: return false
         generatedDir = File(File(kaptKotlinGeneratedDir).parentFile, "catadioptre")
-
         annotatedElements
             .filter { it.kind == ElementKind.METHOD }
             .map { it as ExecutableElement }
             .groupBy { it.enclosingElement as TypeElement }
             .forEach { (enclosingElement, elements) ->
-                val classContainer = enclosingElement.toImmutableKmClass()
-                val packageName = elementUtils.getPackageOf(enclosingElement.enclosingElement)
-                val testableClassName = "Testable" + enclosingElement.simpleName.toString()
-
-                val testableClassFile = FileSpec.builder("${packageName}.catadioptre", testableClassName)
-                    .addImport("$packageName", enclosingElement.simpleName.toString())
-                generatesProxyMethods(
-                    enclosingElement,
-                    classContainer,
-                    elements,
-                    testableClassFile
+                val typeSpec = enclosingElement.toTypeSpec(
+                    lenient = true,
+                    classInspector = classInspector
                 )
-                testableClassFile.build().writeTo(generatedDir)
+                if (typeSpec.isCompanion || typeSpec.kind == TypeSpec.Kind.OBJECT) {
+                    processingEnv.messager.printMessage(
+                        Diagnostic.Kind.WARNING,
+                        "No Catadioptre proxy could be generated for the members of ${enclosingElement.asClassName()}, because object types are not supported yet."
+                    )
+                } else {
+                    val packageName = elementUtils.getPackageOf(enclosingElement.enclosingElement)
+                    val testableClassName = "Testable" + enclosingElement.simpleName.toString()
+                    val testableClassFile = FileSpec.builder("${packageName}.catadioptre", testableClassName)
+                        .addImport("$packageName", enclosingElement.simpleName.toString())
+                    generatesProxyMethods(
+                        enclosingElement,
+                        typeSpec,
+                        elements,
+                        testableClassFile
+                    )
+                    testableClassFile.build().writeTo(generatedDir)
+                }
             }
 
         return true
     }
 
     /**
-     * Returns the [KClassVisibility] of the parameter or the container class.
-     */
-    private fun collectDeclaredVisibilities(
-        typeElement: TypeElement,
-        visibilities: MutableList<KClassVisibility>
-    ) {
-        visibilities += when {
-            Modifier.PUBLIC in typeElement.modifiers -> KClassVisibility.PUBLIC
-            typeElement.toImmutableKmClass().isInternal -> KClassVisibility.INTERNAL
-            else -> KClassVisibility.PRIVATE
-        }
-
-        typeElement.typeParameters.forEach {
-            collectDeclaredVisibilities(elementUtils.getTypeElement(it.toString()), visibilities)
-        }
-    }
-
-    /**
      * Builds the extension functions to access the annotated members in the class.
      *
      * @param enclosingElement class declaring the annotated elements
-     * @param classContainer representation of [enclosingElement] as an [ImmutableKmClass]
+     * @param typeSpec the KotlinPoet [TypeSpec] corresponding to the [enclosingElement]
      * @param elements annotated elements for which extension functions have to be generated
      * @param testableClassFile specification for the file that will contain the extension functions
-     * @param classVisibilityModifier visibility modifier to apply on the extension functions
      */
     private fun generatesProxyMethods(
         enclosingElement: TypeElement,
-        classContainer: ImmutableKmClass,
+        typeSpec: TypeSpec,
         elements: List<ExecutableElement>,
         testableClassFile: FileSpec.Builder
     ) {
-        elements.forEach { element ->
-            val methodVisibility = kotlinVisibilityUtils.detectLowestVisibility(element)
-            val property = specificationUtils.findProperty(classContainer, element)
-            if (methodVisibility != KModifier.PRIVATE) {
-                val annotation = element.getAnnotation(KTestable::class.java)
-
-                if (property != null) {
-                    generateTestableProperty(
-                        classContainer,
-                        enclosingElement,
-                        property,
-                        testableClassFile,
-                        annotation,
-                        methodVisibility
-                    )
-                } else {
-                    generateTestableFunction(
-                        classContainer,
-                        enclosingElement,
-                        element,
-                        testableClassFile,
-                        methodVisibility
-                    )
-                }
-            } else {
-                if (property != null) {
-                    processingEnv.messager.printMessage(
-                        Diagnostic.Kind.WARNING,
-                        "Cannot generate the Catadioptre proxy method for the property " +
-                                "${enclosingElement.asClassName()}.${property.name}, " +
-                                "the type of the receiver or the property has a too low visibility"
-                    )
-                } else {
-                    val kmFunction = specificationUtils.findFunction(classContainer, element)
-                    processingEnv.messager.printMessage(
-                        Diagnostic.Kind.WARNING,
-                        "Cannot generate the Catadioptre proxy method for the function " +
-                                "${enclosingElement.asClassName()}.${kmFunction.signature}, " +
-                                "one of the used type has a too low visibility"
-                    )
-                }
+        val remainingElements = elements.toMutableList()
+        val (receiverTypeElement, receiverSpec) = if (typeSpec.isCompanion) {
+            val typeElement = enclosingElement.enclosingElement as TypeElement
+            typeElement to typeElement.toTypeSpec(true, classInspector)
+        } else {
+            enclosingElement to typeSpec
+        }
+        // Generates the proxies for each function of the type.
+        elements.mapNotNull { element ->
+            val method = specificationUtils.findFunction(typeSpec, element)
+            method?.let {
+                remainingElements.remove(element)
+                element to method
             }
+        }.forEach { (element, function) ->
+            val methodVisibility = kotlinVisibilityUtils.detectLowestVisibility(typeSpec, element)
+            if (methodVisibility != KModifier.PRIVATE) {
+                generateTestableFunction(
+                    typeElement = receiverTypeElement,
+                    typeSpec = receiverSpec,
+                    function = function,
+                    visibility = methodVisibility,
+                    testableClassFile = testableClassFile
+                )
+            } else {
+                processingEnv.messager.printMessage(
+                    Diagnostic.Kind.WARNING,
+                    "No Catadioptre proxy could be generated for the function ${enclosingElement.asClassName()}.${function.element}, because one of the used types is private"
+                )
+            }
+        }
+
+        // Generates the proxies for each annotates property of the type.
+        elements.mapNotNull { element ->
+            val property = specificationUtils.findProperty(typeSpec, element)
+            property?.let {
+                remainingElements.remove(element)
+                element to property
+            }
+        }.forEach { (element, propSpec) ->
+            val visibility = kotlinVisibilityUtils.detectLowestVisibility(typeSpec, propSpec.type)
+            if (visibility != KModifier.PRIVATE) {
+                generateTestableProperty(
+                    typeElement = receiverTypeElement,
+                    typeSpec = receiverSpec,
+                    property = propSpec,
+                    annotation = element.getAnnotation(KTestable::class.java),
+                    visibility = visibility,
+                    testableClassFile = testableClassFile
+                )
+            } else {
+                processingEnv.messager.printMessage(
+                    Diagnostic.Kind.WARNING,
+                    "No Catadioptre proxy could be generated for the property ${enclosingElement.asClassName()}.${propSpec.name}, because its type is private"
+                )
+            }
+        }
+
+        remainingElements.forEach {
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.WARNING,
+                "No Catadioptre proxy could be generated for member ${enclosingElement.asClassName()}.${it.simpleName}, because some source elements (Kotlin function, property getter) were not found"
+            )
         }
     }
 
     /**
-     * Generates the functions to manipulate properties: getter, setter and clearer.
+     * Generates the specification for the extension function that calls the invisible one, using reflection,
+     * while keeping the same signature.
+     *
+     * @param typeElement the type that encloses the function.
+     * @param typeSpec the KotlinPoet [TypeSpec] that represents the [typeElement].
+     * @param function the details of the function to be proxied.
+     * @param visibility the visibility to apply to the generated function.
+     * @param testableClassFile the file where the proxy function has to be added.
+     */
+    private fun generateTestableFunction(
+        typeElement: TypeElement,
+        typeSpec: TypeSpec,
+        function: AnnotatedFunction,
+        visibility: KModifier,
+        testableClassFile: FileSpec.Builder
+    ) {
+        val receiver = typeElement.asType().asTypeName()
+        var functionBuilder = function.spec.toBuilder()
+            .receiver(receiver)
+            .jvmName(function.spec.name)
+            .apply {
+                // Removes all the modifiers to apply the expected one later.
+                modifiers.remove(KModifier.PUBLIC)
+                modifiers.remove(KModifier.INTERNAL)
+                modifiers.remove(KModifier.PROTECTED)
+                modifiers.remove(KModifier.PRIVATE)
+
+                // The parameters are copied, without the default values.
+                val existingParameters = parameters.map {
+                    ParameterSpec.builder(it.name, it.type, it.modifiers).build()
+                }
+                parameters.clear()
+                addParameters(existingParameters)
+
+                // When the enclosing class as variable types, they are applied to the proxy function
+                // to maintain a consistency.
+                typeSpec.typeVariables.forEach {
+                    addTypeVariable(it)
+                }
+            }
+            // Adds the expected visibility.
+            .addModifiers(visibility)
+
+            .returns(function.spec.returnType)
+            // The code body is erased to be replaced.
+            .clearBody()
+
+        // Defines the code body to use Catadioptre facilities to call the private function.
+        if (function.spec.parameters.isEmpty()) {
+            testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "invokeNoArgs")
+            functionBuilder =
+                functionBuilder.addStatement("""return this.invokeNoArgs("${function.spec.name}")""")
+        } else {
+            testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "invokeInvisible", "named")
+            var statement = """return this.invokeInvisible("${function.spec.name}", """
+            statement += function.spec.parameters.joinToString(", ") { param ->
+                """named("${param.name}", ${param.name})"""
+            } + ")"
+            functionBuilder = functionBuilder.addStatement(statement)
+        }
+        testableClassFile.addFunction(functionBuilder.build())
+    }
+
+    /**
+     * Generates the functions to manipulate the private properties: getter, setter and clearer.
+     *
+     * @param typeElement the type that encloses the function.
+     * @param typeSpec the KotlinPoet [TypeSpec] that represents the [typeElement].
+     * @param property the KotlinPoet [PropertySpec] representing the private property to proxy.
+     * @param annotation the annotation set onto the property, that defines the requirements for proxy generation.
+     * @param visibility the visibility to apply to the generated functions.
+     * @param testableClassFile the file where the proxy functions have to be added.
      */
     private fun generateTestableProperty(
-        declaringType: ImmutableKmClass,
-        enclosingElement: TypeElement,
-        property: ImmutableKmProperty,
-        testableClassFile: FileSpec.Builder,
+        typeElement: TypeElement,
+        typeSpec: TypeSpec,
+        property: PropertySpec,
         annotation: KTestable,
-        visibility: KModifier
+        visibility: KModifier,
+        testableClassFile: FileSpec.Builder
     ) {
-        val propertyName = property.name
-        val propertyTypeName = specificationUtils.createTypeName(declaringType, property.returnType)
         if (annotation.getter) {
-            testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "getProperty")
-            testableClassFile.addFunction(
-                FunSpec.builder(property.name)
-                    .prepareFunctionForProperty(enclosingElement, declaringType, visibility, false)
-                    .returns(propertyTypeName)
-                    .addStatement("return this.getProperty(\"$propertyName\")")
-                    .build()
-            )
+            generateGetter(typeElement, typeSpec, property, visibility, testableClassFile)
         }
-
         if (annotation.setter) {
-            testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "setProperty")
-            testableClassFile.addFunction(
-                FunSpec.builder(propertyName)
-                    .addParameter("value", propertyTypeName)
-                    .addStatement("this.setProperty(\"$propertyName\", value)")
-                    .prepareFunctionForProperty(enclosingElement, declaringType, visibility, true)
-                    .build()
-            )
+            generateSetter(typeElement, typeSpec, property, visibility, testableClassFile)
         }
+        if (annotation.clearer && property.type.isNullable) {
+            generateCleaner(typeElement, typeSpec, property, visibility, testableClassFile)
+        }
+    }
 
-        if (annotation.clearer && property.returnType.isNullable) {
-            testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "clearProperty")
-            testableClassFile.addFunction(
-                FunSpec.builder("clear" + propertyName.capitalize())
-                    .addStatement("this.clearProperty(\"$propertyName\")")
-                    .prepareFunctionForProperty(enclosingElement, declaringType, visibility, true)
-                    .build()
-            )
-        }
+    /**
+     * Generates the proxy getter to a private property.
+     *
+     * @param typeElement the type that encloses the function.
+     * @param typeSpec the KotlinPoet [TypeSpec] that represents the [typeElement].
+     * @param property the KotlinPoet [PropertySpec] representing the private property to proxy.
+     * @param visibility the visibility to apply to the generated functions.
+     * @param testableClassFile the file where the proxy functions have to be added.
+     */
+    private fun generateGetter(
+        typeElement: TypeElement,
+        typeSpec: TypeSpec,
+        property: PropertySpec,
+        visibility: KModifier,
+        testableClassFile: FileSpec.Builder
+    ) {
+        testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "getProperty")
+        testableClassFile.addFunction(
+            FunSpec.builder(property.name)
+                .prepareFunctionForProperty(typeElement, typeSpec, visibility, false)
+                .returns(property.type)
+                .addStatement("return this.getProperty(\"${property.name}\")")
+                .build()
+        )
+    }
+
+    /**
+     * Generates the proxy setter to a private property.
+     *
+     * @param typeElement the type that encloses the function.
+     * @param typeSpec the KotlinPoet [TypeSpec] that represents the [typeElement].
+     * @param property the KotlinPoet [PropertySpec] representing the private property to proxy.
+     * @param visibility the visibility to apply to the generated functions.
+     * @param testableClassFile the file where the proxy functions have to be added.
+     */
+    private fun generateSetter(
+        typeElement: TypeElement,
+        typeSpec: TypeSpec,
+        property: PropertySpec,
+        visibility: KModifier,
+        testableClassFile: FileSpec.Builder
+    ) {
+        testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "setProperty")
+        testableClassFile.addFunction(
+            FunSpec.builder(property.name)
+                .addParameter("value", property.type)
+                .addStatement("this.setProperty(\"${property.name}\", value)")
+                .prepareFunctionForProperty(typeElement, typeSpec, visibility, true)
+                .build()
+        )
+    }
+
+    /**
+     * Generates the proxy setter to a clean the value of a property (set it to null).
+     *
+     * @param typeElement the type that encloses the function.
+     * @param typeSpec the KotlinPoet [TypeSpec] that represents the [typeElement].
+     * @param property the KotlinPoet [PropertySpec] representing the private property to proxy.
+     * @param visibility the visibility to apply to the generated functions.
+     * @param testableClassFile the file where the proxy functions have to be added.
+     */
+    private fun generateCleaner(
+        typeElement: TypeElement,
+        typeSpec: TypeSpec,
+        property: PropertySpec,
+        visibility: KModifier,
+        testableClassFile: FileSpec.Builder
+    ) {
+        testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "clearProperty")
+        testableClassFile.addFunction(
+            FunSpec.builder("clear" + property.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() })
+                .addStatement("this.clearProperty(\"${property.name}\")")
+                .prepareFunctionForProperty(typeElement, typeSpec, visibility, true)
+                .build()
+        )
     }
 
     /**
@@ -244,18 +387,18 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
      */
     private fun FunSpec.Builder.prepareFunctionForProperty(
         enclosingElement: TypeElement,
-        declaringType: ImmutableKmClass,
+        declaringType: TypeSpec,
         visibility: KModifier,
         returnsDeclaring: Boolean = false
     ): FunSpec.Builder {
+        val receiver = enclosingElement.asType().asTypeName()
         addModifiers(visibility)
-            .receiver(enclosingElement.asType().asTypeName())
-            .addTypeVariables(declaringType.typeParameters.map {
-                specificationUtils.createTypeNameForTypeParameter(
-                    declaringType,
-                    it
-                )
-            })
+            .receiver(receiver)
+            .apply {
+                declaringType.typeVariables.forEach {
+                    addTypeVariable(it)
+                }
+            }
 
         if (returnsDeclaring) {
             returns(enclosingElement.asType().asTypeName())
@@ -264,46 +407,5 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         return this
     }
 
-    /**
-     * Generates the specification for the extension function that calls the invisible one, using reflection,
-     * while keeping the same signature.
-     */
-    private fun generateTestableFunction(
-        declaringType: ImmutableKmClass,
-        enclosingElement: TypeElement,
-        function: ExecutableElement,
-        testableClassFile: FileSpec.Builder,
-        visibility: KModifier
-    ) {
-        val kmFunction = specificationUtils.findFunction(declaringType, function)
-        var functionBuilder = FunSpec.builder(kmFunction.name)
-            .receiver(enclosingElement.asType().asTypeName())
-            .jvmName(function.simpleName.toString())
-            .addTypeVariables((kmFunction.typeParameters + declaringType.typeParameters).map {
-                specificationUtils.createTypeNameForTypeParameter(declaringType, it)
-            })
-            .returns(function.returnType.asTypeName())
-
-        kmFunction.valueParameters.forEach { arg ->
-            functionBuilder =
-                functionBuilder.addParameter(
-                    arg.name, specificationUtils.createTypeName(declaringType, arg.type!!)
-                )
-        }
-        functionBuilder.addModifiers(visibility)
-
-        if (kmFunction.valueParameters.isEmpty()) {
-            testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "invokeNoArgs")
-            functionBuilder = functionBuilder.addStatement("""return this.invokeNoArgs("${kmFunction.name}")""")
-        } else {
-            testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "invokeInvisible", "named")
-            var statement = """return this.invokeInvisible("${kmFunction.name}", """
-            statement += kmFunction.valueParameters.joinToString(", ") { arg ->
-                """named("${arg.name}", ${arg.name})"""
-            } + ")"
-            functionBuilder = functionBuilder.addStatement(statement)
-        }
-        testableClassFile.addFunction(functionBuilder.build())
-    }
 
 }

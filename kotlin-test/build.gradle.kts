@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 /*
  * Copyright 2021 AERIS-Consulting e.U.
  *
@@ -18,17 +20,21 @@ plugins {
     kotlin("kapt")
 }
 
-java {
-    description = "Module to test the annotation processing for Kotlin"
-}
-
-// Adds the generated sources to the test sources.
-kotlin.sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/source/kaptKotlin/catadioptre"))
+description = "Module to test the annotation processing for Kotlin"
 
 val junitVersion: String by project
 val assertkVersion: String by project
 
 kapt.useBuildCache = false
+
+kotlin {
+    // Adds the generated sources to the test sources.
+    sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/source/kaptKotlin/catadioptre"))
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+        freeCompilerArgs.add("-Xsuppress-version-warnings")
+    }
+}
 
 dependencies {
     implementation(kotlin("stdlib"))
