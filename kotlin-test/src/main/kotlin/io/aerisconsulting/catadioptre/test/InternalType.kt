@@ -23,6 +23,14 @@ internal class InternalType : AbstractCatadioptreExample<Double, Optional<String
     @KTestable
     private var defaultProperty: Map<String, Double>? = mutableMapOf("any" to 1.0)
 
+    /**
+     * This property can actually not be tested, because the type [PrivateCatadioptreExample] is private.
+     * If there is no compilation issue, it means that we surely only generates proxies for the annotated
+     * functions.
+     */
+    @KTestable
+    private lateinit var privateTypedProperty: PrivateCatadioptreExample
+
     @KTestable
     @Suppress("kotlin:S1144")
     private fun multiplySum(multiplier: Double = 1.0, vararg valuesToSum: Double?): Double {
@@ -30,11 +38,12 @@ internal class InternalType : AbstractCatadioptreExample<Double, Optional<String
     }
 
     /**
-     * This class can actually not be tested, because the type InternalCatadioptreExample is private.
-     * But it should not generate any compilation issue and be simply ignored.
+     * This function can actually not be tested, because the type [PrivateCatadioptreExample] is private.
+     * If there is no compilation issue, it means that we surely only generates proxies for the annotated
+     * functions.
      */
     @KTestable
-    private fun createListOfInternalClasses() = listOf(InternalCatadioptreExample())
+    private fun createListOfPrivateClasses() = listOf(PrivateCatadioptreExample())
 
-    private class InternalCatadioptreExample
+    private class PrivateCatadioptreExample
 }

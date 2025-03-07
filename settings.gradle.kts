@@ -18,11 +18,11 @@ include("catadioptre-java")
 include("catadioptre-kotlin")
 include("catadioptre-annotations")
 
+include("kotlin-test")
+include("java-test")
+
 include("examples:catadioptre-kotlin-gradle-kotlin-dsl-example")
 include("examples:catadioptre-kotlin-gradle-groovy-dsl-example")
 
 include("examples:catadioptre-java-gradle-kotlin-dsl-example")
 include("examples:catadioptre-java-gradle-groovy-dsl-example")
-
-include("kotlin-test")
-include("java-test")

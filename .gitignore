@@ -11,3 +11,5 @@ gradle.properties
 build/
 
 .java-version
+/examples/catadioptre-java-maven-example/target/
+/examples/catadioptre-kotlin-maven-example/target/

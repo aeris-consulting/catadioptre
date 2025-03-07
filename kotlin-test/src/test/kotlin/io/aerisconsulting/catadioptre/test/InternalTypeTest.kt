@@ -25,6 +25,8 @@ import io.aerisconsulting.catadioptre.test.catadioptre.defaultProperty
 import io.aerisconsulting.catadioptre.test.catadioptre.divideSum
 import io.aerisconsulting.catadioptre.test.catadioptre.getAnything
 import io.aerisconsulting.catadioptre.test.catadioptre.multiplySum
+import io.aerisconsulting.catadioptre.test.catadioptre.sumAsDouble
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import java.util.Optional
 
@@ -83,7 +85,7 @@ internal class InternalTypeTest {
     internal fun `should execute the function without argument`() {
         val instance = InternalType()
 
-        val result = instance.multiplySum(2.0, arrayOf(1.0, 3.0, 6.0))
+        val result = instance.multiplySum(2.0, 1.0, 3.0, 6.0)
 
         assertThat(result).isEqualTo(20.0)
     }
@@ -98,12 +100,21 @@ internal class InternalTypeTest {
     }
 
     @Test
-    internal fun `should execute the function of parent with variable arguments`() {
+    internal fun `should execute the suspend function of parent with variable arguments`() = runBlocking {
         val instance = InternalType()
 
-        val result = instance.divideSum(2.0, arrayOf(1.0, 3.0, 6.0))
+        val result = instance.divideSum(2.0, 1.0, 3.0, 6.0)
 
         assertThat(result).isEqualTo(5.0)
+    }
+
+    @Test
+    internal fun `should execute the function of parent with variable type arguments`() {
+        val instance = InternalType()
+
+        val result = instance.sumAsDouble(2.546, 1534L)
+
+        assertThat(result).isEqualTo(1536.546)
     }
 
 }

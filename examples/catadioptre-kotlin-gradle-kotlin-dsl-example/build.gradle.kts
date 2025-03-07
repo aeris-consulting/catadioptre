@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 /*
  * Copyright 2021 AERIS-Consulting e.U.
  *
@@ -18,14 +20,17 @@ plugins {
     kotlin("kapt")
 }
 
-java {
-    description =
-        "Catadioptre example in Kotlin for Gradle with Kotlin DSL - Tests and demos the application of the annotations"
+description =
+    "Catadioptre example in Kotlin for Gradle with Kotlin DSL - Tests and demos the application of the annotations"
+
+kotlin {
+    // Adds the generated sources to the test sources.
+    sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/source/kaptKotlin/catadioptre"))
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+        freeCompilerArgs.add("-Xsuppress-version-warnings")
+    }
 }
-
-// Adds the generated sources to the test sources.
-kotlin.sourceSets["test"].kotlin.srcDir(layout.buildDirectory.dir("generated/source/kaptKotlin/catadioptre"))
-
 val junitVersion: String by project
 val assertkVersion: String by project
 

@@ -21,7 +21,7 @@ import assertk.assertions.isNull
 import assertk.assertions.prop
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -188,7 +188,7 @@ internal class ReflectionFunctionUtilsTest {
 
     @Test
     internal fun `should execute a function when the argument is a mock of an abstract class and two candidate methods`() =
-        runBlockingTest {
+        runBlocking {
             // given
             val instance = ReflectionUtilsObject()
             val mock = mockk<AbstractWrapper> {
@@ -203,7 +203,7 @@ internal class ReflectionFunctionUtilsTest {
         }
 
     @Test
-    internal fun `should execute a private suspended function without argument`() = runBlockingTest {
+    internal fun `should execute a private suspended function without argument`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -215,7 +215,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute a private suspended function with keyed null argument`() = runBlockingTest {
+    internal fun `should execute a private suspended function with keyed null argument`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -227,7 +227,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute a private suspended function with omitted argument`() = runBlockingTest {
+    internal fun `should execute a private suspended function with omitted argument`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -239,7 +239,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute a private suspended function with all indexed arguments`() = runBlockingTest {
+    internal fun `should execute a private suspended function with all indexed arguments`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -251,7 +251,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute a private suspended function with all keyed arguments`() = runBlockingTest {
+    internal fun `should execute a private suspended function with all keyed arguments`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -262,7 +262,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute a private suspended function with an omitted value`() = runBlockingTest {
+    internal fun `should execute a private suspended function with an omitted value`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -274,7 +274,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute a private suspended function with an argument and vararg`() = runBlockingTest {
+    internal fun `should execute a private suspended function with an argument and vararg`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -287,7 +287,7 @@ internal class ReflectionFunctionUtilsTest {
 
     @Test
     internal fun `should execute a private suspended function with an argument and null for the vararg`() =
-        runBlockingTest {
+        runBlocking {
             // given
             val instance = SuspendedReflectionUtilsObject()
 
@@ -300,7 +300,7 @@ internal class ReflectionFunctionUtilsTest {
 
 
     @Test
-    internal fun `should execute an inherited suspended function without argument`() = runBlockingTest {
+    internal fun `should execute an inherited suspended function without argument`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -313,7 +313,7 @@ internal class ReflectionFunctionUtilsTest {
 
 
     @Test
-    internal fun `should execute an inherited suspended function with omitted argument`() = runBlockingTest {
+    internal fun `should execute an inherited suspended function with omitted argument`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -325,7 +325,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute an inherited suspended function with all indexed arguments`() = runBlockingTest {
+    internal fun `should execute an inherited suspended function with all indexed arguments`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -337,7 +337,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should execute an inherited suspended function with an argument and vararg`() = runBlockingTest {
+    internal fun `should execute an inherited suspended function with an argument and vararg`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 
@@ -349,7 +349,7 @@ internal class ReflectionFunctionUtilsTest {
     }
 
     @Test
-    internal fun `should throw original exception when executing suspended function`() = runBlockingTest {
+    internal fun `should throw original exception when executing suspended function`() = runBlocking {
         // given
         val instance = SuspendedReflectionUtilsObject()
 

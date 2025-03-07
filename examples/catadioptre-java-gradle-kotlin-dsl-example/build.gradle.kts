@@ -16,10 +16,8 @@ plugins {
     java
 }
 
-java {
-    description =
-        "Catadioptre example in Java for Gradle with Kotlin DSL - Tests and demos the application of the annotations"
-}
+description =
+    "Catadioptre example in Java for Gradle with Kotlin DSL - Tests and demos the application of the annotations"
 
 // Adds the generated sources to the test sources.
 java.sourceSets["test"].java.srcDir(layout.buildDirectory.dir("generated/sources/annotationProcessor/java/catadioptre"))
