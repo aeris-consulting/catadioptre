@@ -16,9 +16,7 @@ plugins {
     java
 }
 
-java {
-    description = "Module to test the annotation processing for Java"
-}
+description = "Module to test the annotation processing for Java"
 
 // Adds the generated sources to the test sources.
 java.sourceSets["test"].java.srcDir(layout.buildDirectory.dir("generated/sources/annotationProcessor/java/catadioptre"))

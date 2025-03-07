@@ -14,8 +14,24 @@ With **Catadioptre**, you can:
 * execute private and protected functions / methods,
 * generate "proxy" methods at compilation-time to easily access to the private members in your tests.
 
-**Catadioptre** supports variable arguments in Java and Kotlin as well as optional and named arguments as well as `suspend` functions in Kotlin.
+**Catadioptre** supports variable arguments in Java and Kotlin as well as optional and named arguments as well as
+`suspend` functions in Kotlin.
 
 ## Why and how to use Catadioptre?
 
-We encourage you to read the [official documentation](https://catadioptre.aeris-consulting.io/) to better understand the challenges that **Catadioptre** solves and how it helps you to do it.
+We encourage you to read the [official documentation](https://catadioptre.aeris-consulting.io/) to better understand the
+challenges that **Catadioptre** solves and how it helps you to do it.
+
+## Changes
+
+### Version 0.6
+
+Better support of the Kotlin functions, keeps the varargs arguments and the Kotlin types (collections, numbers,
+strings) and adds support for suspend functions.
+
+## Versions compatibilities
+
+| Catadioptre | Java  | Kotlin      |
+|-------------|-------|-------------|
+| 0.6.+       | 11-21 | 2.+         |
+| 0.5.+       | <= 11 | 1.8.+-1.9.+ |

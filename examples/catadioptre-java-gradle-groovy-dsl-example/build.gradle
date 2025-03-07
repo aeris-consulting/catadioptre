@@ -32,4 +32,6 @@ dependencies {
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
 }
 
-project.tasks.findAll { it instanceof AbstractPublishToMaven }.each { it.enabled = false }
+afterEvaluate {
+    project.tasks.findAll { it instanceof AbstractPublishToMaven }.each { it.enabled = false }
+}

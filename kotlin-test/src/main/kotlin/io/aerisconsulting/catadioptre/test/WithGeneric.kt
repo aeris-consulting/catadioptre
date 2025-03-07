@@ -11,7 +11,7 @@ class WithGeneric {
     }
 
     @KTestable
-    private fun processGenericStar(spec: Specification<*, Any?, *>) = Unit
+    private fun processGenericStar(spec: Specification<*, Any?, *>): String = "any"
 
     @KTestable
     private fun processGenericReferencingItself(spec: Specification<Any?, Any?, out Specification<Any?, Any?, *>>) =

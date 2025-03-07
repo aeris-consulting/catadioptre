@@ -12,6 +12,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import com.vanniktech.maven.publish.SonatypeHost
 import org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
 import org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED
@@ -21,19 +22,14 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.STARTED
 
 plugins {
     java
-    kotlin("jvm") version "1.8.0"
-    kotlin("kapt") version "1.8.0"
-    id("net.ltgt.apt") version "0.21" apply false
-
-    id("nebula.contacts") version "6.0.0"
-    id("nebula.info") version "11.4.1"
-    id("nebula.maven-publish") version "18.4.0"
-    id("nebula.maven-scm") version "18.4.0"
-    id("nebula.maven-manifest") version "18.4.0"
-    id("nebula.maven-apache-license") version "18.4.0"
+    kotlin("jvm") version "2.0.0" apply false
+    kotlin("kapt") version "2.0.0" apply false
+    // Replaces the standard maven publish in order to create a single staging repositories for all the publications.
+    // This avoids staging repositories to be split by heuristic logic from Sonatype.
+    id("com.vanniktech.maven.publish") version "0.31.0"
     signing
 
-    id("org.sonarqube") version "3.3"
+    id("org.sonarqube") version "6.0.+"
 }
 
 tasks.withType<Wrapper> {
@@ -41,39 +37,17 @@ tasks.withType<Wrapper> {
 }
 
 val target = JavaVersion.VERSION_11
-val kotlinCompileTarget = "11"
 
 allprojects {
     group = "io.aeris-consulting"
     version = File(rootDir, "project.version").readText().trim()
 
+}
+
+subprojects {
     apply(plugin = "java")
-    apply(plugin = "nebula.contacts")
-    apply(plugin = "nebula.info")
-    apply(plugin = "nebula.maven-publish")
-    apply(plugin = "nebula.maven-scm")
-    apply(plugin = "nebula.maven-manifest")
-    apply(plugin = "nebula.maven-developer")
-    apply(plugin = "nebula.maven-apache-license")
+    apply(plugin = "com.vanniktech.maven.publish")
     apply(plugin = "signing")
-    apply(plugin = "nebula.javadoc-jar")
-    apply(plugin = "nebula.source-jar")
-
-    infoBroker {
-        excludedManifestProperties = listOf(
-            "Manifest-Version", "Module-Owner", "Module-Email", "Module-Source",
-            "Built-OS", "Build-Host", "Build-Job", "Build-Host", "Build-Job", "Build-Number", "Build-Id", "Build-Url",
-            "Built-Status"
-        )
-    }
-
-    contacts {
-        addPerson("catadioptre@aeris-consulting.com", delegateClosureOf<nebula.plugin.contacts.Contact> {
-            moniker = "AERIS-Consulting e.U."
-            github = "aeris-consulting"
-            role("Owner")
-        })
-    }
 
     repositories {
         mavenLocal()
@@ -84,44 +58,42 @@ allprojects {
         sourceCompatibility = target
         targetCompatibility = target
     }
+    val project = this
+    val ossrhAerisUsername: String? by project
+    val ossrhAerisPassword: String? by project
 
-    signing {
-        publishing.publications.forEach { sign(it) }
-    }
-}
+    afterEvaluate {
+        mavenPublishing {
+            pom {
+                name.set(project.name)
+                description.set(project.description)
 
-subprojects {
-    val ossrhUsername: String? by project
-    val ossrhPassword: String? by project
-    publishing {
-        repositories {
-            maven {
-                val snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                val releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                name = "sonatype"
-                url = uri(if (project.version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
-                credentials {
-                    username = ossrhUsername
-                    password = ossrhPassword
+                url.set("https://catadioptre.aeris-consulting.io")
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0 (Apache-2.0)")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("ericjesse")
+                        name.set("Eric Jessé")
+                    }
+                }
+                scm {
+                    url.set("https://github.com/aeris-consulting/catadioptre")
                 }
             }
+
+            publishToMavenCentral(SonatypeHost.S01)
+            signAllPublications()
         }
     }
 
     tasks {
         withType<Jar> {
             archiveBaseName.set(project.name)
-        }
-
-        withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            kotlinOptions {
-                jvmTarget = kotlinCompileTarget
-                javaParameters = true
-                freeCompilerArgs += listOf(
-                    "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
-                )
-
-            }
         }
 
         val replacedPropertiesInResources = mapOf("project.version" to project.version)
@@ -163,7 +135,8 @@ val testTasks = subprojects.flatMap {
 }
 
 tasks.register("testReport", TestReport::class) {
-    this.group = "verification"
+    group = "verification"
+    description = "Generates a global report for the tests."
     destinationDir = file("${buildDir}/reports/tests")
     reportOn(*(testTasks.toTypedArray()))
 }

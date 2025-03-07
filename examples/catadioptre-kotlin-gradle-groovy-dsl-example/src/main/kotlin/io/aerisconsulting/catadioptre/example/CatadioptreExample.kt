@@ -27,13 +27,4 @@ internal class CatadioptreExample : AbstractCatadioptreExample<Double, Optional<
     private fun multiplySum(multiplier: Double = 1.0, vararg valuesToSum: Double?): Double {
         return valuesToSum.filterNotNull().sum() * multiplier
     }
-
-    /**
-     * This class can actually not be tested, because the type InternalCatadioptreExample is private.
-     * But it should not generate any compilation issue and be simply ignored.
-     */
-    @KTestable
-    private fun createListOfInternalClasses() = listOf(InternalCatadioptreExample())
-
-    private class InternalCatadioptreExample
 }

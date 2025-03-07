@@ -28,7 +28,7 @@ abstract class AbstractCatadioptreExample<T : Number, V : Any> : CatadioptreInte
 
     @KTestable
     @Suppress("kotlin:S1144")
-    private fun divideSum(divider: Double = defaultDivider, vararg valuesToSum: Double?): Double {
+    private suspend fun divideSum(divider: Double = defaultDivider, vararg valuesToSum: Double?): Double {
         return valuesToSum.filterNotNull().sum() / divider
     }
 
@@ -36,6 +36,19 @@ abstract class AbstractCatadioptreExample<T : Number, V : Any> : CatadioptreInte
     @Suppress("kotlin:S1144")
     private fun getAnything() = 123
 
+    @KTestable
+    @Suppress("kotlin:S1144")
+    private fun <W : Number> sumAsDouble(part1: T, part2: W): Double {
+        return part1.toDouble() + part2.toDouble()
+    }
+
+    companion object {
+
+        @KTestable
+        @Suppress("kotlin:S1144")
+        private fun returnTwo() = 2.0
+
+    }
 }
 
 interface CatadioptreInterface<T : Any>
