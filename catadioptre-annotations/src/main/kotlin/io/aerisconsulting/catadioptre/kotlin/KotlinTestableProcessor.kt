@@ -20,7 +20,9 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.jvm.jvmName
@@ -332,7 +334,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         testableClassFile.addFunction(
             FunSpec.builder(property.name)
                 .prepareFunctionForProperty(typeElement, typeSpec, visibility, false)
-                .returns(property.type)
+                .returns(getPropertyType(property.type))
                 .addStatement("return this.getProperty(\"${property.name}\")")
                 .build()
         )
@@ -357,11 +359,30 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "setProperty")
         testableClassFile.addFunction(
             FunSpec.builder(property.name)
-                .addParameter("value", property.type)
+                .addParameter("value", getPropertyType(property.type))
                 .addStatement("this.setProperty(\"${property.name}\", value)")
                 .prepareFunctionForProperty(typeElement, typeSpec, visibility, true)
                 .build()
         )
+    }
+
+    /**
+     * Determines the actual type of the property.
+     */
+    private fun getPropertyType(propertyType: TypeName): TypeName {
+        return when (propertyType) {
+            is WildcardTypeName -> {
+                propertyType.outTypes.first().let { outType ->
+                    if (propertyType.isNullable) {
+                        outType.copy(nullable = true)
+                    } else {
+                        outType.copy(nullable = false)
+                    }
+                }
+            }
+
+            else -> propertyType
+        }
     }
 
     /**
