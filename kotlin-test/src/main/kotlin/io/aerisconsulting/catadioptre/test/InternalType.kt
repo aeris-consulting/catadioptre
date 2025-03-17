@@ -15,6 +15,7 @@
 package io.aerisconsulting.catadioptre.test
 
 import io.aerisconsulting.catadioptre.KTestable
+import java.time.Instant
 import java.util.Optional
 
 @Suppress("kotlin:S1144")
@@ -30,6 +31,13 @@ internal class InternalType : AbstractCatadioptreExample<Double, Optional<String
      */
     @KTestable
     private lateinit var privateTypedProperty: PrivateCatadioptreExample
+
+    /**
+     * This property has no explicit type and is not nullable. It should
+     * not generate any compilation error.
+     */
+    @KTestable
+    private var untypedInstant = Instant.now()
 
     @KTestable
     @Suppress("kotlin:S1144")
