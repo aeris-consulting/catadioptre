@@ -33,5 +33,5 @@ strings) and adds support for suspend functions.
 
 | Catadioptre | Java  | Kotlin      |
 |-------------|-------|-------------|
-| 0.6.+       | 11-21 | 2.+         |
+| 0.6.+       | 11-21 | 1.8.+       |
 | 0.5.+       | <= 11 | 1.8.+-1.9.+ |
