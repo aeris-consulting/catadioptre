@@ -14,21 +14,21 @@ You can directly get the dependency from Maven Central.
 
 _With Gradle and the Groovy DSL_
 ```groovy
-testImplementation 'io.aeris-consulting:catadioptre-kotlin:0.6.1'
+testImplementation 'io.aeris-consulting:catadioptre-kotlin:0.6.2'
 
 // For the code generation.
-compileOnly 'io.aeris-consulting:catadioptre-annotations:0.6.1'
-kapt 'io.aeris-consulting:catadioptre-annotations:0.6.1'
+compileOnly 'io.aeris-consulting:catadioptre-annotations:0.6.2'
+kapt 'io.aeris-consulting:catadioptre-annotations:0.6.2'
 ```
 
 _With Gradle and the Kotlin DSL_
 
 ```kotlin
-testImplementation("io.aeris-consulting:catadioptre-kotlin:0.6.1")
+testImplementation("io.aeris-consulting:catadioptre-kotlin:0.6.2")
 
 // For the code generation.
-compileOnly("io.aeris-consulting:catadioptre-annotations:0.6.1")
-kapt("io.aeris-consulting:catadioptre-annotations:0.6.1")
+compileOnly("io.aeris-consulting:catadioptre-annotations:0.6.2")
+kapt("io.aeris-consulting:catadioptre-annotations:0.6.2")
 ```
 
 _With Maven_
@@ -36,7 +36,7 @@ _With Maven_
 <dependency>
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-kotlin</artifactId>
-  <version>0.6.1</version>
+  <version>0.6.2</version>
   <scope>test</scope>
 </dependency>
 
@@ -44,7 +44,7 @@ _With Maven_
 <dependency>
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-annotations</artifactId>
-  <version>0.6.1</version>
+  <version>0.6.2</version>
   <scope>provided</scope>
 </dependency>
   [...]
@@ -62,7 +62,7 @@ _With Maven_
       <annotationProcessorPath>
         <groupId>io.aeris-consulting</groupId>
         <artifactId>catadioptre-annotations</artifactId>
-        <version>0.6.1</version>
+        <version>0.6.2</version>
       </annotationProcessorPath>
     </annotationProcessorPaths>
   </configuration>
