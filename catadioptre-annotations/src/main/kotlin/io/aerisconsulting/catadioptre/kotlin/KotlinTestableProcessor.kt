@@ -241,6 +241,8 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
             .receiver(receiver)
             .jvmName(function.spec.name)
             .apply {
+                // Removes all the annotations, in case they are not in the classpath.
+                annotations.clear()
                 // Removes all the modifiers (open, visibility, abstract...) to only later apply the expected ones.
                 modifiers.clear()
 

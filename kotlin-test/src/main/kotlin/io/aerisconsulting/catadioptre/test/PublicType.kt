@@ -30,7 +30,8 @@ class PublicType {
     }
 
     @KTestable
-    private fun callMethodThrowingException(example: String) {
+    @jakarta.transaction.Transactional // Adds an annotation absent from the test compilation classpath.
+    protected fun callMethodThrowingException(example: String) {
         throw IllegalStateException(example)
     }
 }

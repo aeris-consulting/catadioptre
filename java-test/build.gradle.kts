@@ -25,6 +25,7 @@ val junitVersion: String by project
 
 dependencies {
     compileOnly(project(":catadioptre-annotations"))
+    compileOnly("jakarta.transaction:jakarta.transaction-api:2.+")
 
     annotationProcessor(project(":catadioptre-annotations"))
 

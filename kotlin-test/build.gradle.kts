@@ -41,6 +41,8 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     compileOnly(project(":catadioptre-annotations"))
+    compileOnly("jakarta.transaction:jakarta.transaction-api:2.+")
+
     kapt(project(":catadioptre-annotations"))
 
     testImplementation(project(":catadioptre-kotlin"))
