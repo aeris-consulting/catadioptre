@@ -14,18 +14,18 @@ You can directly get the dependency from Maven Central.
 
 _With Gradle and the Groovy DSL_
 ```groovy
-testImplementation 'io.aeris-consulting:catadioptre-java:0.6.2'
+testImplementation 'io.aeris-consulting:catadioptre-java:0.6.3'
 
 // For the code generation.
-compileOnly 'io.aeris-consulting:catadioptre-annotations:0.6.2'
+compileOnly 'io.aeris-consulting:catadioptre-annotations:0.6.3'
 ```
 
 _With Gradle and the Kotlin DSL_
 ```kotlin
-testImplementation("io.aeris-consulting:catadioptre-java:0.6.2")
+testImplementation("io.aeris-consulting:catadioptre-java:0.6.3")
 
 // For the code generation.
-compileOnly("io.aeris-consulting:catadioptre-annotations:0.6.2")
+compileOnly("io.aeris-consulting:catadioptre-annotations:0.6.3")
 ```
 
 _With Maven_
@@ -33,7 +33,7 @@ _With Maven_
 <dependency>
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-java</artifactId>
-  <version>0.6.2</version>
+  <version>0.6.3</version>
   <scope>test</scope>
 </dependency>
 
@@ -41,13 +41,13 @@ _With Maven_
 <dependency>
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-java</artifactId>
-  <version>0.6.2</version>
+  <version>0.6.3</version>
   <scope>provided</scope>
 </dependency>
 <dependency>
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-annotations</artifactId>
-  <version>0.6.2</version>
+  <version>0.6.3</version>
   <scope>provided</scope>
 </dependency>
 ```

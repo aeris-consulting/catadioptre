@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.metadata.specs.ClassInspector
 import com.squareup.kotlinpoet.metadata.specs.toTypeSpec
 import com.squareup.kotlinpoet.tag
 import java.util.concurrent.ConcurrentHashMap
+import javax.annotation.processing.Messager
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
@@ -21,6 +22,7 @@ import javax.lang.model.type.TypeMirror
 import javax.lang.model.type.TypeVariable
 import javax.lang.model.type.WildcardType
 import javax.lang.model.util.Elements
+import javax.tools.Diagnostic.Kind
 import kotlin.metadata.KmClass
 import kotlin.metadata.Visibility
 import kotlin.metadata.visibility
@@ -28,7 +30,8 @@ import kotlin.metadata.visibility
 @DelicateKotlinPoetApi("Awareness of delicate aspect")
 internal class KotlinVisibilityUtils(
     private val classInspector: ClassInspector,
-    private val elementsUtils: Elements
+    private val elementsUtils: Elements,
+    private val messager: Messager
 ) {
 
     /**
@@ -45,6 +48,7 @@ internal class KotlinVisibilityUtils(
      * Determines whether all the types in the context of the [ExecutableElement] can be accessible from a public
      * method of the module.
      *
+     * @param typeSpec the Kotlin poet specification of the type containing the method
      * @param methodElement the element to inspect
      */
     fun detectLowestVisibility(typeSpec: TypeSpec, methodElement: ExecutableElement): KModifier {
@@ -58,39 +62,40 @@ internal class KotlinVisibilityUtils(
         return collectedModifiers.minByOrNull { it.ordinal }?.klassModifiers?.first() ?: KModifier.PUBLIC
     }
 
-
     /**
-     * Determines whether all the types in the context of the [ExecutableElement] can be accessible from a public
-     * method of the module.
+     * Determines whether all the types in the context of a property of type [typeName] enclosed in [typeSpec]
+     * can be accessible from a public method of the module.
      *
-     * @param methodElement the element to inspect
+     * @param typeSpec the enclosing type of the property to check
+     * @param typeName the type of the property to check
      */
     fun detectLowestVisibility(typeSpec: TypeSpec, typeName: TypeName): KModifier {
-        val collectedModifiers = mutableSetOf<KClassVisibility>()
+        val collectedVisibilities = mutableSetOf<KClassVisibility>()
         if (KModifier.INTERNAL in typeSpec.modifiers) {
-            collectedModifiers += KClassVisibility.INTERNAL
+            collectedVisibilities += KClassVisibility.INTERNAL
         } else if (KModifier.PRIVATE in typeSpec.modifiers) {
-            collectedModifiers += KClassVisibility.PRIVATE
+            collectedVisibilities += KClassVisibility.PRIVATE
         }
-        collectVisibilities(typeName, collectedModifiers)
-        return collectedModifiers.minByOrNull { it.ordinal }?.klassModifiers?.first() ?: KModifier.PUBLIC
+        collectVisibilities(typeName, collectedVisibilities)
+        return collectedVisibilities.minByOrNull { it.ordinal }?.klassModifiers?.first() ?: KModifier.PUBLIC
     }
 
     private fun collectVisibilities(
         typeName: TypeName,
-        collectedModifiers: MutableSet<KClassVisibility>
+        collectedVisibilities: MutableSet<KClassVisibility>
     ) {
+        messager.printMessage(Kind.OTHER, "Collecting visibility of type $typeName")
         if (typeName is ParameterizedTypeName) {
-            collectVisibilities(typeName.rawType, collectedModifiers)
+            collectVisibilities(typeName.rawType, collectedVisibilities)
             typeName.typeArguments.forEach {
-                collectVisibilities(it, collectedModifiers)
+                collectVisibilities(it, collectedVisibilities)
             }
         } else if (typeName is ClassName) {
-            visibilityCache[typeName.canonicalName]?.also { collectedModifiers += it } ?: run {
+            visibilityCache[typeName.canonicalName]?.also { collectedVisibilities += it } ?: run {
                 runCatching {
                     elementsUtils.getTypeElement(typeName.canonicalName).asType()
                 }.getOrNull()?.let {
-                    collectVisibilities(it, collectedModifiers)
+                    collectVisibilities(it, collectedVisibilities)
                 }
             }
         }
@@ -100,17 +105,17 @@ internal class KotlinVisibilityUtils(
      * Collects all the private, internal and public visibilities of the [ExecutableElement].
      *
      * @param methodElement the element to inspect
-     * @param collectedModifiers the set containing the collected modifiers
+     * @param collectedVisibilities the set containing the collected modifiers
      */
     private fun collectVisibilities(
         methodElement: ExecutableElement,
-        collectedModifiers: MutableSet<KClassVisibility>
+        collectedVisibilities: MutableSet<KClassVisibility>
     ) {
-        methodElement.receiverType?.let { collectVisibilities(it, collectedModifiers) }
-        methodElement.enclosingElement.asType()?.let { collectVisibilities(it, collectedModifiers) }
-        collectVisibilities(methodElement.returnType, collectedModifiers)
+        methodElement.receiverType?.let { collectVisibilities(it, collectedVisibilities) }
+        methodElement.enclosingElement.asType()?.let { collectVisibilities(it, collectedVisibilities) }
+        collectVisibilities(methodElement.returnType, collectedVisibilities)
         for (parameter in methodElement.parameters) {
-            collectVisibilities(parameter.asType(), collectedModifiers)
+            collectVisibilities(parameter.asType(), collectedVisibilities)
         }
     }
 
@@ -118,20 +123,37 @@ internal class KotlinVisibilityUtils(
      * Collects all the private, internal and public visibilities of the [TypeMirror].
      *
      * @param type the type to inspect
-     * @param collectedModifiers the set containing the collected modifiers
+     * @param collectedVisibilities the set containing the collected modifiers
      */
-    private fun collectVisibilities(type: TypeMirror, collectedModifiers: MutableSet<KClassVisibility>) {
-        when (type) {
-            is PrimitiveType -> collectedModifiers.add(KClassVisibility.PUBLIC)
-            is ArrayType -> collectVisibilities(type.componentType, collectedModifiers)
-            is DeclaredType -> collectVisibilities(type, collectedModifiers)
-            is TypeVariable -> collectVisibilities(type.upperBound, collectedModifiers)
-            is WildcardType -> type.extendsBound?.let { collectVisibilities(it, collectedModifiers) }
-            is NoType -> {
-                // Nothing to do.
-            }
+    private fun collectVisibilities(
+        type: TypeMirror,
+        collectedVisibilities: MutableSet<KClassVisibility>,
+        visitedTypes: MutableSet<TypeMirror> = mutableSetOf()
+    ) {
+        if (type !in visitedTypes) {
+            // When the type as an argument of its own type, it should not be visited a second type to avoid
+            // infinite loops.
+            visitedTypes += type
 
-            else -> throw IllegalArgumentException("Not supported type: " + type + " being a " + type.javaClass)
+            when (type) {
+                is PrimitiveType -> collectedVisibilities.add(KClassVisibility.PUBLIC)
+                is ArrayType -> collectVisibilities(type.componentType, collectedVisibilities, visitedTypes)
+                is DeclaredType -> collectVisibilities(type, collectedVisibilities, visitedTypes)
+                is TypeVariable -> collectVisibilities(type.upperBound, collectedVisibilities, visitedTypes)
+                is WildcardType -> type.extendsBound?.let {
+                    collectVisibilities(
+                        it,
+                        collectedVisibilities,
+                        visitedTypes
+                    )
+                }
+
+                is NoType -> {
+                    // Nothing to do.
+                }
+
+                else -> throw IllegalArgumentException("Not supported type: " + type + " being a " + type.javaClass)
+            }
         }
     }
 
@@ -139,9 +161,13 @@ internal class KotlinVisibilityUtils(
      * Collects all the private, internal and public visibilities of the [DeclaredType] and its type arguments.
      *
      * @param type the type to inspect
-     * @param collectedModifiers the set containing the collected modifiers
+     * @param collectedVisibilities the set containing the collected modifiers
      */
-    private fun collectVisibilities(type: DeclaredType, collectedModifiers: MutableSet<KClassVisibility>) {
+    private fun collectVisibilities(
+        type: DeclaredType,
+        collectedVisibilities: MutableSet<KClassVisibility>,
+        visitedTypes: MutableSet<TypeMirror>
+    ) {
         val element = (type.asElement() as TypeElement)
         val typeVisibility = visibilityCache.computeIfAbsent(element.toString()) {
             val kmClass = typesCache.computeIfAbsent(element.toString()) {
@@ -151,13 +177,14 @@ internal class KotlinVisibilityUtils(
                 kmClass?.visibility == Visibility.PRIVATE -> KClassVisibility.PRIVATE
                 kmClass?.visibility == Visibility.INTERNAL -> KClassVisibility.INTERNAL
                 Modifier.PRIVATE in element.modifiers -> KClassVisibility.PRIVATE
+                Modifier.PROTECTED in element.modifiers -> KClassVisibility.PRIVATE
                 else -> KClassVisibility.PUBLIC
             }
         }
-        collectedModifiers.add(typeVisibility)
-
-        for (typeArgument in type.typeArguments) {
-            collectVisibilities(typeArgument, collectedModifiers)
+        collectedVisibilities.add(typeVisibility)
+        type.typeArguments.forEach { typeArgument ->
+            collectVisibilities(typeArgument, collectedVisibilities, visitedTypes)
         }
+
     }
 }

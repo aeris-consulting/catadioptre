@@ -14,30 +14,37 @@
  */
 package io.aerisconsulting.catadioptre.test;
 
+import io.aerisconsulting.catadioptre.KTestable;
 import io.aerisconsulting.catadioptre.Testable;
+
 import java.util.Arrays;
 import java.util.Objects;
 
-abstract class AbstractCatadioptreExample<T extends Number, V> implements CatadioptreInterface<T> {
+abstract class AbstractCatadioptreExample<T extends Number, V, SELF extends AbstractCatadioptreExample<T, V, SELF>> implements CatadioptreInterface<T> {
 
-	@Testable
-	private T typedProperty = null;
+    @Testable
+    private T typedProperty = null;
 
-	@Testable
-	private V typedProperty2 = null;
+    @Testable
+    private V typedProperty2 = null;
 
-	protected AbstractCatadioptreExample(final T typedProperty, final V defaultArgumentTypedProperty2) {
-		this.typedProperty = typedProperty;
-		this.typedProperty2 = defaultArgumentTypedProperty2;
-	}
+    protected AbstractCatadioptreExample(final T typedProperty, final V defaultArgumentTypedProperty2) {
+        this.typedProperty = typedProperty;
+        this.typedProperty2 = defaultArgumentTypedProperty2;
+    }
 
-	@Testable
-	private Double divideSum(double divider, Double... valuesToSum) {
-		return Arrays.stream(valuesToSum).filter(Objects::nonNull).mapToDouble(d -> d).sum() / divider;
-	}
+    @KTestable
+    private SELF self() {
+        return (SELF) this;
+    }
 
-	@Testable
-	private int getAnything() {
-		return 123;
-	}
+    @Testable
+    private Double divideSum(double divider, Double... valuesToSum) {
+        return Arrays.stream(valuesToSum).filter(Objects::nonNull).mapToDouble(d -> d).sum() / divider;
+    }
+
+    @Testable
+    private int getAnything() {
+        return 123;
+    }
 }

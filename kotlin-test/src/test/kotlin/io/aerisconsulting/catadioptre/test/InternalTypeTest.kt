@@ -25,12 +25,22 @@ import io.aerisconsulting.catadioptre.test.catadioptre.defaultProperty
 import io.aerisconsulting.catadioptre.test.catadioptre.divideSum
 import io.aerisconsulting.catadioptre.test.catadioptre.getAnything
 import io.aerisconsulting.catadioptre.test.catadioptre.multiplySum
+import io.aerisconsulting.catadioptre.test.catadioptre.self
 import io.aerisconsulting.catadioptre.test.catadioptre.sumAsDouble
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import java.util.Optional
 
 internal class InternalTypeTest {
+
+    @Test
+    internal fun `should get self as type argument`() {
+        val instance = InternalType()
+
+        val result = instance.self()
+
+        assertThat(result).isSameAs(result)
+    }
 
     @Test
     internal fun `should read the value of default property`() {
