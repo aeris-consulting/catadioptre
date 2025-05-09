@@ -19,7 +19,7 @@ import java.time.Instant
 import java.util.Optional
 
 @Suppress("kotlin:S1144")
-internal class InternalType : AbstractCatadioptreExample<Double, Optional<String>>() {
+internal class InternalType : AbstractCatadioptreExample<Double, Optional<String>, InternalType>() {
 
     @KTestable
     private var defaultProperty: Map<String, Double>? = mutableMapOf("any" to 1.0)

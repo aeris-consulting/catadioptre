@@ -18,7 +18,7 @@ import io.aerisconsulting.catadioptre.Testable;
 
 import java.util.*;
 
-public class PublicType extends AbstractCatadioptreExample<Double, Optional<String>> {
+public class PublicType extends AbstractCatadioptreExample<Double, Optional<String>, PublicType> {
 
 	@Testable
 	private final Map<String, Double> markers;

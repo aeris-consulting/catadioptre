@@ -96,7 +96,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
             // inspector cannot be created. Which does not matter, since there is no
             // KTestable to run.
             classInspector = ElementsClassInspector.create(true, elementUtils, typeUtils)
-            kotlinVisibilityUtils = KotlinVisibilityUtils(classInspector, elementUtils)
+            kotlinVisibilityUtils = KotlinVisibilityUtils(classInspector, elementUtils, processingEnv.messager)
         }
     }
 

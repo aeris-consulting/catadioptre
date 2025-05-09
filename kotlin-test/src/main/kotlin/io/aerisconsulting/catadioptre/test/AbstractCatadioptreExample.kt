@@ -16,7 +16,8 @@ package io.aerisconsulting.catadioptre.test
 
 import io.aerisconsulting.catadioptre.KTestable
 
-abstract class AbstractCatadioptreExample<T : Number, V : Any> : CatadioptreInterface<T> {
+abstract class AbstractCatadioptreExample<T : Number, V : Any, SELF : AbstractCatadioptreExample<T, V, SELF>> :
+    CatadioptreInterface<T> {
 
     @KTestable
     private var defaultArgumentTypedProperty: T? = null
@@ -25,6 +26,11 @@ abstract class AbstractCatadioptreExample<T : Number, V : Any> : CatadioptreInte
     private var defaultArgumentTypedProperty2: V? = null
 
     private var defaultDivider: Double = 1.0
+
+    @KTestable
+    private fun self(): SELF {
+        return this as SELF
+    }
 
     @KTestable
     @Suppress("kotlin:S1144")
