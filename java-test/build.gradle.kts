@@ -32,8 +32,8 @@ dependencies {
     testImplementation(project(":catadioptre-java"))
     testImplementation("org.assertj:assertj-core:3.20.2")
     testImplementation("org.mockito:mockito-junit-jupiter:4.0.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<AbstractPublishToMaven> {

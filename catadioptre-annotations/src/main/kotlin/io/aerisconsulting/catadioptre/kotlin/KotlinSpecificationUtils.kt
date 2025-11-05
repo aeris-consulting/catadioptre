@@ -77,12 +77,13 @@ internal class KotlinSpecificationUtils(
      * Verifies whether a Kotlin type and a Java type are equal.
      */
     fun areTypesEqual(kotlinType: TypeName, javaType: TypeName): Boolean {
-        return if (kotlinType.toString() == javaType.toString()) {
+        val nonNullableKotlinType = if (kotlinType.isNullable) kotlinType.copy(nullable = false) else kotlinType
+        return if (nonNullableKotlinType.toString() == javaType.toString()) {
             true
-        } else if (kotlinType is ParameterizedTypeName && javaType is ParameterizedTypeName) {
-            areTypesEqual(kotlinType.rawType, javaType.rawType)
+        } else if (nonNullableKotlinType is ParameterizedTypeName && javaType is ParameterizedTypeName) {
+            areTypesEqual(nonNullableKotlinType.rawType, javaType.rawType)
         } else {
-            JAVA_TO_KOTLIN_EQUIVALENT[javaType.toString()] == kotlinType.toString()
+            JAVA_TO_KOTLIN_EQUIVALENT[javaType.toString()] == nonNullableKotlinType.toString()
         }
     }
 

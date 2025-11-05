@@ -46,8 +46,8 @@ dependencies {
     testImplementation(project(":catadioptre-kotlin"))
     testImplementation("com.willowtreeapps.assertk:assertk:$assertkVersion")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:$assertkVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<AbstractPublishToMaven> {
