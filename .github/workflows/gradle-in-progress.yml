@@ -1,9 +1,6 @@
 name: Java CI - Work in progress
 
 on:
-  push:
-    branches-ignore:
-      - main
   pull_request:
     branches:
       - main

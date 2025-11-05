@@ -56,6 +56,8 @@ import javax.tools.Diagnostic
 @SupportedOptions(KotlinTestableProcessor.KAPT_KOTLIN_GENERATED_OPTION_NAME)
 internal class KotlinTestableProcessor : AbstractProcessor() {
 
+    private var initialized = false
+
     private lateinit var typeUtils: Types
 
     private lateinit var elementUtils: Elements
@@ -91,18 +93,39 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         specificationUtils = KotlinSpecificationUtils(
             typeUtils.erasure(elementUtils.getTypeElement(Void::class.java.name).asType())
         )
-        runCatching {
+        try {
             // When the processing is initialized in a pure Java environment, the processor is created, but the
             // inspector cannot be created. Which does not matter, since there is no
             // KTestable to run.
             classInspector = ElementsClassInspector.create(true, elementUtils, typeUtils)
             kotlinVisibilityUtils = KotlinVisibilityUtils(classInspector, elementUtils, processingEnv.messager)
+
+            initialized = true
+        } catch (_: Error) {
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.NOTE,
+                "[Catadioptre] Kotlin-specific utils are not available"
+            )
+        } catch (_: Throwable) {
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.NOTE,
+                "[Catadioptre] Kotlin-specific utils are not available"
+            )
         }
     }
 
     override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
         val annotatedElements = roundEnv.getElementsAnnotatedWith(KTestable::class.java)
-        if (annotatedElements.isEmpty()) return false
+        if (!initialized && annotatedElements.isNotEmpty()) {
+            val types =
+                annotatedElements.mapNotNull { it.enclosingElement as? TypeElement }.map { "${it.qualifiedName}" }
+                    .toSet()
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.NOTE,
+                "[Catadioptre] Annotated elements in classes ${types.joinToString(", ")} were found but the processing is not possible because the Kotlin tools are not accessible."
+            )
+        }
+        if (!initialized || annotatedElements.isEmpty()) return false
 
         val kaptKotlinGeneratedDir = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME] ?: return false
         generatedDir = File(File(kaptKotlinGeneratedDir).parentFile, "catadioptre")
@@ -179,7 +202,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
             } else {
                 processingEnv.messager.printMessage(
                     Diagnostic.Kind.WARNING,
-                    "No Catadioptre proxy could be generated for the function ${enclosingElement.asClassName()}.${function.element}, because one of the used types is private"
+                    "[Catadioptre] No proxy could be generated for the function ${enclosingElement.asClassName()}.${function.element}, because one of the used types is private"
                 )
             }
         }
@@ -205,7 +228,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
             } else {
                 processingEnv.messager.printMessage(
                     Diagnostic.Kind.WARNING,
-                    "No Catadioptre proxy could be generated for the property ${enclosingElement.asClassName()}.${propSpec.name}, because its type is private"
+                    "[Catadioptre] No proxy could be generated for the property ${enclosingElement.asClassName()}.${propSpec.name}, because its type is private"
                 )
             }
         }
@@ -213,7 +236,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         remainingElements.forEach {
             processingEnv.messager.printMessage(
                 Diagnostic.Kind.WARNING,
-                "No Catadioptre proxy could be generated for member ${enclosingElement.asClassName()}.${it.simpleName}, because some source elements (Kotlin function, property getter) were not found"
+                "[Catadioptre] No proxy could be generated for member ${enclosingElement.asClassName()}.${it.simpleName}, because some source elements (Kotlin function, property getter) were not found"
             )
         }
     }

@@ -59,8 +59,6 @@ subprojects {
         targetCompatibility = target
     }
     val project = this
-    val ossrhAerisUsername: String? by project
-    val ossrhAerisPassword: String? by project
 
     afterEvaluate {
         mavenPublishing {
@@ -103,7 +101,6 @@ subprojects {
 
         named<Test>("test") {
             ignoreFailures = System.getProperty("ignoreUnitTestFailures", "false").toBoolean()
-            useJUnitPlatform()
         }
 
         withType<Test> {

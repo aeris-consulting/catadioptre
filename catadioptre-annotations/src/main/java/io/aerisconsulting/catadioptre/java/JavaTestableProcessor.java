@@ -76,7 +76,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
             generatedDir.mkdirs();
         } catch (IOException e) {
             processingEnv.getMessager()
-                    .printMessage(Kind.ERROR, "Could not detect the generation folder: " + e.getMessage());
+                    .printMessage(Kind.ERROR, "[Catadioptre] Could not detect the generation folder: " + e.getMessage());
         }
     }
 
@@ -121,7 +121,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
                     final String methodSignature = declaringType.getQualifiedName() + "." + methodElement;
                     processingEnv.getMessager().printMessage(
                             Diagnostic.Kind.WARNING,
-                            "Cannot generate the Catadioptre proxy method for the function " + methodSignature
+                            "[Catadioptre] Cannot generate the proxy method for the function " + methodSignature
                                     + ", one of the used type has a too low visibility"
                     );
                 }
@@ -135,7 +135,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
                             declaringType.getQualifiedName() + "." + variableElement.getSimpleName();
                     processingEnv.getMessager().printMessage(
                             Diagnostic.Kind.WARNING,
-                            "Cannot generate the Catadioptre proxy method for the function " + fieldSignature
+                            "[Catadioptre] Cannot generate the proxy method for the function " + fieldSignature
                                     + ", the type of the declaring class or the field has a too low visibility"
                     );
                 }
@@ -150,7 +150,7 @@ public class JavaTestableProcessor extends AbstractProcessor {
             } catch (IOException e) {
                 processingEnv.getMessager()
                         .printMessage(Kind.ERROR,
-                                "Could not generate the testable source for class " + packageName + "."
+                                "[Catadioptre] Could not generate the testable source for class " + packageName + "."
                                         + declaringType.getSimpleName().toString() + ": " + e.getMessage());
             }
         }
