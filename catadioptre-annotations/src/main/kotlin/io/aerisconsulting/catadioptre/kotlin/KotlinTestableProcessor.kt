@@ -91,12 +91,14 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         specificationUtils = KotlinSpecificationUtils(
             typeUtils.erasure(elementUtils.getTypeElement(Void::class.java.name).asType())
         )
-        runCatching {
+        try {
             // When the processing is initialized in a pure Java environment, the processor is created, but the
             // inspector cannot be created. Which does not matter, since there is no
             // KTestable to run.
             classInspector = ElementsClassInspector.create(true, elementUtils, typeUtils)
             kotlinVisibilityUtils = KotlinVisibilityUtils(classInspector, elementUtils, processingEnv.messager)
+        } catch (e: Exception) {
+            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Kotlin-specific utils are not available")
         }
     }
 

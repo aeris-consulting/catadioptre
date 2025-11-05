@@ -29,6 +29,10 @@ kotlin {
     }
 }
 
+val junitVersion: String by project
+val assertkVersion: String by project
+val mockkVersion: String by project
+
 dependencies {
     compileOnly(kotlin("stdlib"))
     compileOnly(project(":catadioptre-kotlin"))
@@ -37,4 +41,11 @@ dependencies {
     implementation("com.squareup:kotlinpoet-metadata:2.0.0")
     implementation("org.jetbrains.kotlin:kotlin-metadata-jvm:2.0.0")
     implementation("com.squareup:javapoet:1.13.0")
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:$junitVersion")
+    testImplementation("com.google.testing.compile:compile-testing:0.21.0")
+    testImplementation("com.willowtreeapps.assertk:assertk:$assertkVersion")
+    testImplementation("io.mockk:mockk:$mockkVersion")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.7.2")
 }

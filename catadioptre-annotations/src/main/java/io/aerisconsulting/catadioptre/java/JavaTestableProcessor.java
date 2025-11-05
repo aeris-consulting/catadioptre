@@ -30,8 +30,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.Diagnostic.Kind;
-import javax.tools.JavaFileObject;
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -49,8 +47,6 @@ public class JavaTestableProcessor extends AbstractProcessor {
 
     private Elements elementUtils;
 
-    private File generatedDir;
-
     private JavaSpecificationUtils specificationUtils;
 
     @Override
@@ -66,24 +62,12 @@ public class JavaTestableProcessor extends AbstractProcessor {
         super.init(processingEnv);
         elementUtils = processingEnv.getElementUtils();
         specificationUtils = new JavaSpecificationUtils();
-
-        try {
-            // Finds out the folder where generated sources are written.
-            final JavaFileObject builderFile = processingEnv.getFiler().createSourceFile("CatadioptreLocationTest");
-            generatedDir = new File(new File(builderFile.getName()).getParentFile().getParentFile(), "catadioptre");
-            builderFile.openWriter().close();
-            builderFile.delete();
-            generatedDir.mkdirs();
-        } catch (IOException e) {
-            processingEnv.getMessager()
-                    .printMessage(Kind.ERROR, "Could not detect the generation folder: " + e.getMessage());
-        }
     }
 
     @Override
     public boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv) {
         final Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(Testable.class);
-        if (annotatedElements.isEmpty() || generatedDir == null) {
+        if (annotatedElements.isEmpty()) {
             return false;
         }
 
@@ -142,11 +126,11 @@ public class JavaTestableProcessor extends AbstractProcessor {
             }
         });
 
-        // Then writes the content of the generated class to the file.
+        // Then writes the content of the generated class to the file using the Filer API.
         if (generateFile.get()) {
             try {
                 final JavaFile testableClassFile = JavaFile.builder(packageName, testableTypeSpec.build()).build();
-                testableClassFile.writeTo(generatedDir);
+                testableClassFile.writeTo(processingEnv.getFiler());
             } catch (IOException e) {
                 processingEnv.getMessager()
                         .printMessage(Kind.ERROR,

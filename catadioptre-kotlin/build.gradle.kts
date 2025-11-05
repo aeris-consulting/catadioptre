@@ -37,4 +37,5 @@ dependencies {
     testImplementation("io.mockk:mockk:$mockkVersion")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.7.2")
 }
