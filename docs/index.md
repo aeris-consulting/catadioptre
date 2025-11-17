@@ -88,9 +88,41 @@ issue with Gradle.
 
 ## Changes
 
-### Version 0.6
+### Version 0.6.5
 
-Better support of the Kotlin functions, keeps the varargs arguments and the Kotlin types (collections, numbers,
+Kotlin proxy functions generation:
+
+- Replaces the types recognized as error.NonExistentClass in Kotlin metadata by the types visible in the Java signature.
+- Improves the support of kotlin.Comparator for which Kotlin metadata does not carry any type argument.
+
+### Version 0.6.4
+
+Kotlin proxy functions generation:
+
+- Fixes the mapping from Kotlin to Java type when it is nullable.
+- Disables the Kotlin annotation processor when no Kotlin environment is present.
+
+### Version 0.6.3
+
+Kotlin proxy functions generation:
+
+- Fixes the infinite loop on types with themselves as type arguments.
+
+### Version 0.6.2
+
+Kotlin proxy functions generation:
+
+- Removes the unexpected annotations from Kotlin proxy functions.
+
+### Version 0.6.1
+
+Kotlin proxy functions generation:
+
+- Fixes the generation of proxy methods for Kotlin properties when the type is implied from assignment.
+
+### Version 0.6.0
+
+- Better support of the Kotlin functions, keeps the varargs arguments and the Kotlin types (collections, numbers,
 strings) and adds support for suspend functions.
 
 ## Versions compatibilities

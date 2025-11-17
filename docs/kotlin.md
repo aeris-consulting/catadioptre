@@ -14,21 +14,21 @@ You can directly get the dependency from Maven Central.
 
 _With Gradle and the Groovy DSL_
 ```groovy
-testImplementation 'io.aeris-consulting:catadioptre-kotlin:0.6.3'
+testImplementation 'io.aeris-consulting:catadioptre-kotlin:0.6.5'
 
 // For the code generation.
-compileOnly 'io.aeris-consulting:catadioptre-annotations:0.6.3'
-kapt 'io.aeris-consulting:catadioptre-annotations:0.6.3'
+compileOnly 'io.aeris-consulting:catadioptre-annotations:0.6.5'
+kapt 'io.aeris-consulting:catadioptre-annotations:0.6.5'
 ```
 
 _With Gradle and the Kotlin DSL_
 
 ```kotlin
-testImplementation("io.aeris-consulting:catadioptre-kotlin:0.6.3")
+testImplementation("io.aeris-consulting:catadioptre-kotlin:0.6.5")
 
 // For the code generation.
-compileOnly("io.aeris-consulting:catadioptre-annotations:0.6.3")
-kapt("io.aeris-consulting:catadioptre-annotations:0.6.3")
+compileOnly("io.aeris-consulting:catadioptre-annotations:0.6.5")
+kapt("io.aeris-consulting:catadioptre-annotations:0.6.5")
 ```
 
 _With Maven_
@@ -36,7 +36,7 @@ _With Maven_
 <dependency>
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-kotlin</artifactId>
-  <version>0.6.3</version>
+  <version>0.6.5</version>
   <scope>test</scope>
 </dependency>
 
@@ -44,7 +44,7 @@ _With Maven_
 <dependency>
   <groupId>io.aeris-consulting</groupId>
   <artifactId>catadioptre-annotations</artifactId>
-  <version>0.6.3</version>
+  <version>0.6.5</version>
   <scope>provided</scope>
 </dependency>
   [...]
@@ -62,7 +62,7 @@ _With Maven_
       <annotationProcessorPath>
         <groupId>io.aeris-consulting</groupId>
         <artifactId>catadioptre-annotations</artifactId>
-        <version>0.6.3</version>
+        <version>0.6.5</version>
       </annotationProcessorPath>
     </annotationProcessorPaths>
   </configuration>
@@ -162,10 +162,18 @@ val result = instance.multiplySum(2.0, arrayOf(1.0, 3.0, 6.0))
 
 ### Limitations on the generation of extended functions for Kotlin
 
-1. Suspend functions are not supported, because the annotation processor cannot see them as annotated functions.
-2. Optional parameter are required in the generated functions.
+There are some specific cases where Catadioptre might not be able to resolve the types of a function as you might
+expect.
+This limitation implies slight differences in the generated proxy code, especially concerning the nullability of the
+involved types.
 
-To bypass those limitations - use suspend functions or verify the behavior or a function with a default parameter value - you will have to use the utils provided below.
+Known situations where the generated code might be slightly different are described below.
+
+- It might happen that a class being present in the compilation classpath cannot be embedded in the Kotlin metadata, and
+  is replaced by a proxy class called "error.NonExistentClass".
+  When such happens, Catadioptre will resolve the actual type based upon the Java signature of the method.
+- Kotlin metadata of the type "kotlin.Comparator" does not carry the type parameters as provided in the source code.
+  Therefore, they are resolved based upon the Java signature of the method.
 
 ### Further examples
 
@@ -329,4 +337,3 @@ val result: Double = instance.invokeInvisible("divideTheSum", named("divider", o
 
 While this is in most cases unnecessary, this might help in resolving to the adequate function to execute when functions
 of a class are too similar.
-

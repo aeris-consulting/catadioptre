@@ -14,17 +14,25 @@
  */
 package io.aerisconsulting.catadioptre.kotlin
 
+import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
+import com.squareup.kotlinpoet.javapoet.JTypeName
+import com.squareup.kotlinpoet.javapoet.KotlinPoetJavaPoetPreview
+import com.squareup.kotlinpoet.javapoet.toJTypeName
+import com.squareup.kotlinpoet.javapoet.toKTypeName
 import com.squareup.kotlinpoet.jvm.jvmName
 import com.squareup.kotlinpoet.metadata.classinspectors.ElementsClassInspector
 import com.squareup.kotlinpoet.metadata.specs.ClassInspector
@@ -41,6 +49,7 @@ import javax.lang.model.SourceVersion
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
@@ -78,6 +87,11 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"
 
         private const val CATADIOPTRE_UTILS_PACKAGE_NAME = "io.aerisconsulting.catadioptre"
+
+        private val KOTLIN_COMPARATOR = ClassName.bestGuess("kotlin.Comparator")
+
+        private val JAVA_COMPARATOR = java.util.Comparator::class.asTypeName()
+
     }
 
     override fun getSupportedSourceVersion(): SourceVersion {
@@ -273,22 +287,31 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
                     addModifiers(KModifier.SUSPEND)
                 }
                 // The parameters are copied, without the default values.
-                val existingParameters = parameters.map {
-                    ParameterSpec.builder(it.name, it.type, it.modifiers).build()
+                val existingParameters = parameters.mapIndexed { paramIndex, param ->
+                    val argumentType = upgradeType(param.type, function.element.parameters[paramIndex].asType())
+                    ParameterSpec.builder(param.name, argumentType, param.modifiers).build()
                 }
                 parameters.clear()
                 addParameters(existingParameters)
 
+                // Secures the types arguments.
+                val typeArguments = typeVariables.mapIndexed { paramIndex, param ->
+                    upgradeType(param, function.element.typeParameters[paramIndex].asType()) as TypeVariableName
+                }
+                typeVariables.clear()
+                addTypeVariables(typeArguments)
+
                 // When the enclosing class as variable types, they are applied to the proxy function
                 // to maintain a consistency.
-                typeSpec.typeVariables.forEach {
-                    addTypeVariable(it)
+                typeSpec.typeVariables.forEachIndexed { index, typeVariable ->
+                    val argumentType = upgradeType(typeVariable, typeElement.typeParameters[index].asType())
+                    addTypeVariable(argumentType as TypeVariableName)
                 }
             }
             // Adds the expected visibility.
             .addModifiers(visibility)
 
-            .returns(function.spec.returnType)
+            .returns(upgradeType(function.spec.returnType, function.element.returnType))
             // The code body is erased to be replaced.
             .clearBody()
 
@@ -359,7 +382,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         testableClassFile.addFunction(
             FunSpec.builder(property.name)
                 .prepareFunctionForProperty(typeElement, typeSpec, visibility, false)
-                .returns(getPropertyType(property.type))
+                .returns(getPropertyType(upgradeType(property.type, typeElement.asType())))
                 .addStatement("return this.getProperty(\"${property.name}\")")
                 .build()
         )
@@ -384,7 +407,7 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         testableClassFile.addImport(CATADIOPTRE_UTILS_PACKAGE_NAME, "setProperty")
         testableClassFile.addFunction(
             FunSpec.builder(property.name)
-                .addParameter("value", getPropertyType(property.type))
+                .addParameter("value", getPropertyType(upgradeType(property.type, typeElement.asType())))
                 .addStatement("this.setProperty(\"${property.name}\", value)")
                 .prepareFunctionForProperty(typeElement, typeSpec, visibility, true)
                 .build()
@@ -408,6 +431,80 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
 
             else -> propertyType
         }
+    }
+
+    /**
+     * If the type as provided by the Kotlin metadata does not reflect the java type, it is resolved
+     * or improved from the informations received from the Java [TypeMirror].
+     *
+     * Known cases so far are:
+     * - error.NonExistentClass, used when a class cannot be resolved by Kotlin metadata, but it exists in compilation classpath.
+     * - kotlin.Comparator for which Kotlin metadata returns a class without type arguments.
+     */
+    @OptIn(KotlinPoetJavaPoetPreview::class)
+    private fun upgradeType(kotlinType: TypeName, javaType: TypeMirror): TypeName {
+        return if (kotlinType.toString().contains("error.NonExistentClass")) {
+            JTypeName.get(javaType).toKTypeName().copy(nullable = kotlinType.isNullable)
+        } else if (usesKotlinComparator(kotlinType)) {
+            // kotlin.Comparator is often seen as a type without type arguments, generating compilation failures
+            // of the generated code.
+            resolveComparator(kotlinType, javaType.asTypeName())
+        } else {
+            kotlinType
+        }
+    }
+
+    private fun usesNotExistentClass(typeName: TypeName): Boolean {
+        return if (typeName is TypeVariableName) {
+            typeName.bounds.any(::usesNotExistentClass)
+        } else {
+            typeName.toString().contains("error.NonExistentClass")
+        }
+    }
+
+    private fun usesKotlinComparator(typeName: TypeName): Boolean {
+        return if (typeName is TypeVariableName) {
+            typeName.bounds.any(::usesKotlinComparator)
+        } else {
+            typeName.toString().contains("kotlin.Comparator")
+        }
+    }
+
+    /**
+     * Kotlin comparator metadata is seen as a type without type arguments, generating compilation failures.
+     */
+    @OptIn(KotlinPoetJavaPoetPreview::class)
+    private fun resolveComparator(kotlinTypeName: TypeName, javaType: TypeName): TypeName {
+        var result = kotlinTypeName
+        if (kotlinTypeName is ParameterizedTypeName) {
+            // When the Kotlin type is a parameterized type, the raw type and type arguments are fixed.
+            javaType as ParameterizedTypeName
+            val rawType = if (kotlinTypeName.rawType == JAVA_COMPARATOR) {
+                KOTLIN_COMPARATOR
+            } else {
+                kotlinTypeName.rawType
+            }
+            result = rawType.parameterizedBy(
+                kotlinTypeName.typeArguments.mapIndexed { index, name ->
+                    resolveComparator(name, javaType.typeArguments[index].toJTypeName().toKTypeName())
+                }
+            )
+        } else if (kotlinTypeName is TypeVariableName && javaType is TypeVariableName) {
+            // When dealing with type variables, the bounds are fixed.
+            result = kotlinTypeName.copy(bounds = kotlinTypeName.bounds.mapIndexed { index, name ->
+                resolveComparator(name, javaType.bounds[index].toJTypeName().toKTypeName())
+            })
+        } else if (javaType is ParameterizedTypeName && kotlinTypeName is ClassName) {
+            // This is the situation when the Kotlin type is a raw type, and the Java type is a parameterized type.
+            // Here, the type arugments have to be added to the Kotlin type.
+            result = kotlinTypeName
+                .parameterizedBy(
+                    javaType.typeArguments.map {
+                        resolveComparator(it.toJTypeName().toKTypeName(), it)
+                    }
+                )
+        }
+        return result
     }
 
     /**
@@ -459,6 +556,5 @@ internal class KotlinTestableProcessor : AbstractProcessor() {
         }
         return this
     }
-
 
 }

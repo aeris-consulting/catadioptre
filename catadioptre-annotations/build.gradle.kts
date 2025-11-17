@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":catadioptre-java"))
     implementation("com.squareup:kotlinpoet:2.0.0")
     implementation("com.squareup:kotlinpoet-metadata:2.0.0")
+    implementation("com.squareup:kotlinpoet-javapoet:2.0.0")
     implementation("org.jetbrains.kotlin:kotlin-metadata-jvm:2.0.0")
     implementation("com.squareup:javapoet:1.13.0")
 }
